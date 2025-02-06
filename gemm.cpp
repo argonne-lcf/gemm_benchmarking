@@ -194,7 +194,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 
   std::srand(0);
 
-  fp_c max_c_array_value = std::sqrt(std::numeric_limits<fp_c>::max() / m);
+  fp_c max_c_array_value = std::sqrt(std::numeric_limits<fp_c>::max() / k);
   // assumes fp_c is bigger
   fp_ab max_array_value = std::min((fp_c)max_c_array_value, (fp_c)max_ab / 2);
   for (size_t i = 0; i < (m * k); i++) {

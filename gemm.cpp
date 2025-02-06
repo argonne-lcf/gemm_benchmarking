@@ -292,6 +292,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
     std::cout << "-Q2(median) " << quant(flops, 0.50) << " GFlop/s" << std::endl;
     std::cout << "-Q3 " << quant(flops, 0.75) << " GFlop/s" << std::endl;
     std::cout << "-Max " << flops.back() << " GFlop/s" << std::endl;
+    std::cout << "-Mem " << (m*n*sizeof(fp_c)+k*n*sizeof(fp_ab)+m*k*sizeof(fp_ab)) / 1e9 << " GB" << std::endl;
 
   } else if (MPI_SUB_COMM_GATHER != MPI_COMM_NULL) {
     MPI_Gather(&min_time, 1, MPI_UNSIGNED_LONG, NULL, 0, MPI_UNSIGNED_LONG, root_rank,

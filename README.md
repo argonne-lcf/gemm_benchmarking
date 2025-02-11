@@ -1,4 +1,4 @@
-# gemm_sow
+# gemm_benchmarking
 
 ## Compiling:
 ```

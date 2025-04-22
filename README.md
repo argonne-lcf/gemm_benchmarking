@@ -34,5 +34,7 @@ Result For DGEMM (sample size: 6)
 ## Options
 
 -DSAVE  Save all the `flops` off all rank in $Name.txt
+
 -DITER_MAX Maximun number of Iteration (default 100)
+
 -DITER_MIN Mimun number of Iteration  (default 10). The code will stop when ITER_MIN consecutive run doesn't produce a new best number

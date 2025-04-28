@@ -214,13 +214,12 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 
   int errors = 0;
 
-  int iter_to_verify_born = ITER_MAX;
-#if defined(AVOID_VERIFICATION)
-  const int iter_to_verify_born = -1 
-#elif defined(VERIFICATION_ONLY_FIRST_ITER)
-  const int iter_to_verify_born = 1
-#else
-  const int iter_to_verify_born = ITER_MAX;
+#if defined(ENABLE_VERIFICATION)
+  const int iter_to_verify_born = ITER_MAX
+#elif defined(DISABLE_VERIFICATION)
+  const int iter_to_verify_born = -1
+#else // Verify only first iteration
+  const int iter_to_verify_born = 1;
 #endif
 
   for (int iter = 0, current_iter = 0; iter < ITER_MAX && current_iter < ITER_MIN; iter++) {

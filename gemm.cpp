@@ -171,14 +171,14 @@ template <typename fp_ab, typename fp_c, typename fp_scalar>
 int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_type,
         oneapi::mkl::blas::compute_mode mode = oneapi::mkl::blas::compute_mode::standard) {
 
-  auto transA = oneapi::mkl::transpose::nontrans;
-  auto transB = oneapi::mkl::transpose::nontrans;
+  const auto transA = oneapi::mkl::transpose::nontrans;
+  const auto transB = oneapi::mkl::transpose::nontrans;
 
-  fp_scalar alpha = fp_scalar(1.0);
-  fp_scalar beta = fp_scalar(0.0);
-  int ldA = m;
-  int ldB = k;
-  int ldC = m;
+  const fp_scalar alpha = fp_scalar(1.0);
+  const fp_scalar beta = fp_scalar(0.0);
+  const int ldA = m;
+  const int ldB = k;
+  const int ldC = m;
 
   auto A_device = sycl::malloc_device<fp_ab>(m * k, Q);
   auto B_device = sycl::malloc_device<fp_ab>(k * n, Q);
@@ -190,7 +190,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 
   auto C_cpu = (fp_c *)malloc(m * n * sizeof(fp_c));
 
-  fp_ab max_ab = std::numeric_limits<fp_ab>::max();
+  const fp_ab max_ab = std::numeric_limits<fp_ab>::max();
 
   std::srand(0);
 
@@ -204,8 +204,9 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
     B_host[i] = fp_ab(max_array_value) * double((std::rand() / (double)RAND_MAX));
   }
 
-  Q.copy(A_host, A_device, m * k).wait();
-  Q.copy(B_host, B_device, k * n).wait();
+  Q.copy(A_host, A_device, m * k);
+  Q.copy(B_host, B_device, k * n);
+  Q.wait();
 
   unsigned long min_time_cpu = std::numeric_limits<unsigned long>::max();
   unsigned long min_time_gpu = std::numeric_limits<unsigned long>::max();
@@ -351,8 +352,8 @@ int main(int argc, char **argv) {
   sycl::queue Q;
   int errors = 0;
   // Stream said 4Time LLC per Array ~800 * 3 ~ Total Memory FootPrint = 2.4 G for GPU. for CPU: ~ 1
-  // GB * 3  = 3 GB we can also  chosen size based on where the GEMM flop-rate levels offs for most
-  // GEMMs (as in GEMM_sizes.csv) Or even do to a sweep at runtime. Right now we hardcode some size
+  // GB * 3  = 3 GB. We can also  choose size based on where the GEMM flop-rate levels off for most
+  // GEMMs (as in GEMM_sizes.csv) Or even do a sweep at runtime. Right now, we hardcode some size.
 
   errors += run<double, double, double>(Q, 12000, 12000, 12000, "DGEMM", bench_type);
 
@@ -365,7 +366,7 @@ int main(int argc, char **argv) {
   errors += run<oneapi::mkl::bfloat16, float, float>(Q, 8192 * 3, 7168 * 3, 8192 * 2,
                                                      "HGEMM-BF16", bench_type);
 
-  // Small Footprint reflecting more how application are using it
+  // Small Footprint reflecting more how applications are using it
   errors +=
       run<sycl::half, sycl::half, sycl::half>(Q, 12000, 12000, 12000, "HGEMM-FP16", bench_type);
 

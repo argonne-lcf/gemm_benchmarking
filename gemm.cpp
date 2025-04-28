@@ -214,6 +214,15 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 
   int errors = 0;
 
+  int iter_to_verify_born = ITER_MAX;
+#if defined(AVOID_VERIFICATION)
+  const int iter_to_verify_born = -1 
+#elif defined(VERIFICATION_ONLY_FIRST_ITER)
+  const int iter_to_verify_born = 1
+#else
+  const int iter_to_verify_born = ITER_MAX;
+#endif
+
   for (int iter = 0, current_iter = 0; iter < ITER_MAX && current_iter < ITER_MIN; iter++) {
 
     if (bench_type == "cpu" || iter == 0) {
@@ -229,22 +238,22 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
                                               B_device, ldB, beta, C_device, ldC, mode)
             .wait();
       });
-      Q.copy(C_device, C_gpu_result, m * n).wait();
+      if (iter < iter_to_verify_born)
+        Q.copy(C_device, C_gpu_result, m * n).wait();
     }
 
     if (bench_type == "cpu")
       current_iter = current_iter_cpu;
-    if (bench_type == "gpu")
+    else if (bench_type == "gpu")
       current_iter = current_iter_gpu;
 
-#ifndef AVOID_VERIFICATION
-    errors += verifyResult(C_cpu, C_gpu_result, m * n, name);
-#endif
+    if (iter < iter_to_verify_born)
+      errors += verifyResult(C_cpu, C_gpu_result, m * n, name);
   }
 
-  free(A_device, Q);
-  free(B_device, Q);
-  free(C_device, Q);
+  sycl::free(A_device, Q);
+  sycl::free(B_device, Q);
+  sycl::free(C_device, Q);
   free(A_host);
   free(B_host);
   free(C_gpu_result);

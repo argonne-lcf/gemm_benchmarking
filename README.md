@@ -8,7 +8,7 @@ mpicxx -o gemm gemm.cpp -fsycl -DMKL_ILP64 -fiopenmp -qmkl=parallel
 
 ## Running:
 
-We do two runs to get the GPU and CPU flop-rates. Note that you can runs on multiple nodes and you can get the "Best" single-stack or single-GPU (pair of stacks) value from the "Subset of Rank" value
+We do two runs to get the GPU and CPU flop rates. Note that you can runs on multiple nodes and you can get the "Best" single-stack or single-GPU (pair of stacks) value from the "Subset of Rank" value
 
 ```
 # Bench CPU: Best One Socket of Xeon (and one GPU stack used for verification)
@@ -33,8 +33,8 @@ Result For DGEMM (sample size: 6)
 
 ## Options
 
--DSAVE  Save all the `flops` off all rank in $Name.txt
-
--DITER_MAX Maximun number of Iteration (default 100)
-
--DITER_MIN Mimun number of Iteration  (default 10). The code will stop when ITER_MIN consecutive run doesn't produce a new best number
+-DSAVE  Save all the `flops` off all ranks in $Name.txt
+-DITER_MAX Maximum number of iterations (default 100)
+-DITER_MIN Minimum number of iterations (default 10). The code will stop when ITER_MIN consecutive runs don't produce a new best number.
+-DDISABLE_VERIFICATION Will not run any verification (checking if CPU and GPU result match)
+-DENABLE_VERIFICATION Will enable verification for each iteration (checking if CPU and GPU result match)

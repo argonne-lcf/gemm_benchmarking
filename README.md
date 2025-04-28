@@ -31,10 +31,10 @@ Result For DGEMM (sample size: 6)
 ```
 
 
-## Options
+## Options (compile flag)
 
--DSAVE  Save all the `flops` off all ranks in $Name.txt
--DITER_MAX Maximum number of iterations (default 100)
--DITER_MIN Minimum number of iterations (default 10). The code will stop when ITER_MIN consecutive runs don't produce a new best number.
--DDISABLE_VERIFICATION Will not run any verification (checking if CPU and GPU result match)
--DENABLE_VERIFICATION Will enable verification for each iteration (checking if CPU and GPU result match)
+- `-DSAVE`  Save all the flops off all ranks in $Name.txt
+- `-DITER_MAX` Maximum number of iterations (default 100)
+- `-DITER_MIN` Minimum number of iterations (default 10). The code will stop when ITER_MIN consecutive runs don't produce a new best number.
+- `-DDISABLE_VERIFICATION` Will not run any verification (checking if CPU and GPU result match)
+- `-DENABLE_VERIFICATION` Will enable verification for each iteration (checking if CPU and GPU result match)

@@ -216,15 +216,14 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
   int errors = 0;
 
 #if defined(ENABLE_VERIFICATION)
-  const int iter_to_verify_born = ITER_MAX
+  const int iter_to_verify_born = ITER_MAX;
 #elif defined(DISABLE_VERIFICATION)
-  const int iter_to_verify_born = -1
+  const int iter_to_verify_born = -1;
 #else // Verify only first iteration
   const int iter_to_verify_born = 1;
 #endif
 
   for (int iter = 0, current_iter = 0; iter < ITER_MAX && current_iter < ITER_MIN; iter++) {
-
     if (bench_type == "cpu" || iter == 0) {
       bench(&current_iter_cpu, &min_time_cpu, [&]() {
         mkl_gemm<fp_ab, fp_c, fp_scalar>(m, n, k, alpha, A_host, ldA, B_host, ldB, beta, C_cpu,
@@ -262,7 +261,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
   unsigned long min_time;
   if (bench_type == "cpu")
     min_time = min_time_cpu;
-  if (bench_type == "gpu")
+  else if (bench_type == "gpu")
     min_time = min_time_gpu;
 
   // Now do a gather
@@ -301,7 +300,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
     std::cout << "-Q2(median) " << quant(flops, 0.50) << " GFlop/s" << std::endl;
     std::cout << "-Q3 " << quant(flops, 0.75) << " GFlop/s" << std::endl;
     std::cout << "-Max " << flops.back() << " GFlop/s" << std::endl;
-    std::cout << "-Mem " << (m*n*sizeof(fp_c)+k*n*sizeof(fp_ab)+m*k*sizeof(fp_ab)) / 1e9 << " GB" << std::endl;
+    std::cout << "-Memory usage " << (m*n*sizeof(fp_c)+k*n*sizeof(fp_ab)+m*k*sizeof(fp_ab)) / 1e9 << " GB" << std::endl;
 
   } else if (MPI_SUB_COMM_GATHER != MPI_COMM_NULL) {
     MPI_Gather(&min_time, 1, MPI_UNSIGNED_LONG, NULL, 0, MPI_UNSIGNED_LONG, root_rank,
@@ -356,7 +355,6 @@ int main(int argc, char **argv) {
   // GEMMs (as in GEMM_sizes.csv) Or even do a sweep at runtime. Right now, we hardcode some size.
 
   errors += run<double, double, double>(Q, 12000, 12000, 12000, "DGEMM", bench_type);
-
   errors += run<float, float, float>(Q, 7168 * 2, 7168 * 2, 7168 * 2, "SGEMM-FP32", bench_type);
 
   if (bench_type != "cpu")

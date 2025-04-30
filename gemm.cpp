@@ -171,14 +171,14 @@ template <typename fp_ab, typename fp_c, typename fp_scalar>
 int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_type,
         oneapi::mkl::blas::compute_mode mode = oneapi::mkl::blas::compute_mode::standard) {
 
-  auto transA = oneapi::mkl::transpose::nontrans;
-  auto transB = oneapi::mkl::transpose::nontrans;
+  const auto transA = oneapi::mkl::transpose::nontrans;
+  const auto transB = oneapi::mkl::transpose::nontrans;
 
-  fp_scalar alpha = fp_scalar(1.0);
-  fp_scalar beta = fp_scalar(0.0);
-  int ldA = m;
-  int ldB = k;
-  int ldC = m;
+  const fp_scalar alpha = fp_scalar(1.0);
+  const fp_scalar beta = fp_scalar(0.0);
+  const int ldA = m;
+  const int ldB = k;
+  const int ldC = m;
 
   auto A_device = sycl::malloc_device<fp_ab>(m * k, Q);
   auto B_device = sycl::malloc_device<fp_ab>(k * n, Q);
@@ -190,7 +190,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 
   auto C_cpu = (fp_c *)malloc(m * n * sizeof(fp_c));
 
-  fp_ab max_ab = std::numeric_limits<fp_ab>::max();
+  const fp_ab max_ab = std::numeric_limits<fp_ab>::max();
 
   std::srand(0);
 
@@ -204,8 +204,9 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
     B_host[i] = fp_ab(max_array_value) * double((std::rand() / (double)RAND_MAX));
   }
 
-  Q.copy(A_host, A_device, m * k).wait();
-  Q.copy(B_host, B_device, k * n).wait();
+  Q.copy(A_host, A_device, m * k);
+  Q.copy(B_host, B_device, k * n);
+  Q.wait();
 
   unsigned long min_time_cpu = std::numeric_limits<unsigned long>::max();
   unsigned long min_time_gpu = std::numeric_limits<unsigned long>::max();
@@ -214,8 +215,15 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 
   int errors = 0;
 
-  for (int iter = 0, current_iter = 0; iter < ITER_MAX && current_iter < ITER_MIN; iter++) {
+#if defined(ENABLE_VERIFICATION)
+  const int iter_to_verify_born = ITER_MAX;
+#elif defined(DISABLE_VERIFICATION)
+  const int iter_to_verify_born = -1;
+#else // Verify only first iteration
+  const int iter_to_verify_born = 1;
+#endif
 
+  for (int iter = 0, current_iter = 0; iter < ITER_MAX && current_iter < ITER_MIN; iter++) {
     if (bench_type == "cpu" || iter == 0) {
       bench(&current_iter_cpu, &min_time_cpu, [&]() {
         mkl_gemm<fp_ab, fp_c, fp_scalar>(m, n, k, alpha, A_host, ldA, B_host, ldB, beta, C_cpu,
@@ -229,22 +237,22 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
                                               B_device, ldB, beta, C_device, ldC, mode)
             .wait();
       });
-      Q.copy(C_device, C_gpu_result, m * n).wait();
+      if (iter < iter_to_verify_born)
+        Q.copy(C_device, C_gpu_result, m * n).wait();
     }
 
     if (bench_type == "cpu")
       current_iter = current_iter_cpu;
-    if (bench_type == "gpu")
+    else if (bench_type == "gpu")
       current_iter = current_iter_gpu;
 
-#ifndef AVOID_VERIFICATION
-    errors += verifyResult(C_cpu, C_gpu_result, m * n, name);
-#endif
+    if (iter < iter_to_verify_born)
+      errors += verifyResult(C_cpu, C_gpu_result, m * n, name);
   }
 
-  free(A_device, Q);
-  free(B_device, Q);
-  free(C_device, Q);
+  sycl::free(A_device, Q);
+  sycl::free(B_device, Q);
+  sycl::free(C_device, Q);
   free(A_host);
   free(B_host);
   free(C_gpu_result);
@@ -253,7 +261,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
   unsigned long min_time;
   if (bench_type == "cpu")
     min_time = min_time_cpu;
-  if (bench_type == "gpu")
+  else if (bench_type == "gpu")
     min_time = min_time_gpu;
 
   // Now do a gather
@@ -292,7 +300,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
     std::cout << "-Q2(median) " << quant(flops, 0.50) << " GFlop/s" << std::endl;
     std::cout << "-Q3 " << quant(flops, 0.75) << " GFlop/s" << std::endl;
     std::cout << "-Max " << flops.back() << " GFlop/s" << std::endl;
-    std::cout << "-Mem " << (m*n*sizeof(fp_c)+k*n*sizeof(fp_ab)+m*k*sizeof(fp_ab)) / 1e9 << " GB" << std::endl;
+    std::cout << "-Memory usage " << (m*n*sizeof(fp_c)+k*n*sizeof(fp_ab)+m*k*sizeof(fp_ab)) / 1e9 << " GB" << std::endl;
 
   } else if (MPI_SUB_COMM_GATHER != MPI_COMM_NULL) {
     MPI_Gather(&min_time, 1, MPI_UNSIGNED_LONG, NULL, 0, MPI_UNSIGNED_LONG, root_rank,
@@ -343,11 +351,10 @@ int main(int argc, char **argv) {
   sycl::queue Q;
   int errors = 0;
   // Stream said 4Time LLC per Array ~800 * 3 ~ Total Memory FootPrint = 2.4 G for GPU. for CPU: ~ 1
-  // GB * 3  = 3 GB we can also  chosen size based on where the GEMM flop-rate levels offs for most
-  // GEMMs (as in GEMM_sizes.csv) Or even do to a sweep at runtime. Right now we hardcode some size
+  // GB * 3  = 3 GB. We can also  choose size based on where the GEMM flop-rate levels off for most
+  // GEMMs (as in GEMM_sizes.csv) Or even do a sweep at runtime. Right now, we hardcode some size.
 
   errors += run<double, double, double>(Q, 12000, 12000, 12000, "DGEMM", bench_type);
-
   errors += run<float, float, float>(Q, 7168 * 2, 7168 * 2, 7168 * 2, "SGEMM-FP32", bench_type);
 
   if (bench_type != "cpu")
@@ -357,7 +364,7 @@ int main(int argc, char **argv) {
   errors += run<oneapi::mkl::bfloat16, float, float>(Q, 8192 * 3, 7168 * 3, 8192 * 2,
                                                      "HGEMM-BF16", bench_type);
 
-  // Small Footprint reflecting more how application are using it
+  // Small Footprint reflecting more how applications are using it
   errors +=
       run<sycl::half, sycl::half, sycl::half>(Q, 12000, 12000, 12000, "HGEMM-FP16", bench_type);
 

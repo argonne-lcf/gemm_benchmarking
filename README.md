@@ -1,4 +1,4 @@
-# gemm_benchmarking
+# gemm_benchmarking oneMKL
 
 ## Compiling:
 ```
@@ -16,6 +16,15 @@ OMP_NUM_THREADS=51 mpirun -n $(( $(wc -l < $PBS_NODEFILE) * 2)) -ppn 2 --cpu-bin
 
 # Bench GPU: Bost of 2 Stacks of a single PVC (and 8 threads CPU used for verification)
 OMP_NUM_THREADS=8 mpirun -n $(( $(wc -l < $PBS_NODEFILE) * 12)) -ppn 12 --cpu-bind list:1-8:9-16:17-24:25-32:33-40:41-48:52-59:60-67:68-75:76-83:84-91:92-99 gpu_tile_compact.sh ./gemm gpu
+```
+
+
+# gemm_benchmarking cuda
+
+## Compiling:
+Something like:
+```
+CC gemm_cuda.cpp -cuda /opt/nvidia/hpc_sdk/Linux_x86_64/25.5/math_libs/lib64/libcublas.so /opt/nvidia/hpc_sdk/Linux_x86_64/25.5/compilers/lib/libblas.so -I /opt/nvidia/hpc_sdk/Linux_x86_64/25.5/compilers/include/ilp64/
 ```
 
 ## Output

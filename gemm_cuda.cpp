@@ -115,38 +115,154 @@ void cpu_gemm<__half, __half, __half>(int m, int n, int k, __half alpha, __half 
     for(int i=0; i<m*n; i++) C_cpu[i] = __float2half(fC[i]);
 }
 
-// CPU specialization for Int8 Input -> Int32 Output
-// Naive implementation for verification
+#include <algorithm>
+#include <cstdint>
+
+#if defined(__AVX2__)
+#include <immintrin.h>
+#endif
+
+// Specialization so it doesn't take for ever
+//
 template <>
 void cpu_gemm<int8_t, int32_t, int32_t>(int m, int n, int k,
-                   int32_t alpha, int8_t* A, int ldA,
-                   int8_t* B, int ldB,
-                   int32_t beta, int32_t* C, int ldC) {
+                                        int32_t alpha, int8_t* A, int ldA,
+                                        int8_t* B, int ldB,
+                                        int32_t beta, int32_t* C, int ldC) {
+    // C = alpha * A^T * B + beta * C
+    // A^T[i,l] = A[l + i*ldA]
 
-    // Iterate over columns of C
-    for (int j = 0; j < n; ++j) {
-        // Iterate over rows of C
-        for (int i = 0; i < m; ++i) {
+    constexpr int MC = 128;
+    constexpr int NC = 256;
+    constexpr int KC = 256;
 
-            int32_t sum = 0;
+    if (alpha == 0) {
+        #pragma omp parallel for collapse(2)
+        for (int j = 0; j < n; ++j)
+            for (int i = 0; i < m; ++i)
+                C[i + j * ldC] *= beta;
+        return;
+    }
 
-            // Dot product
-            for (int l = 0; l < k; ++l) {
-                // Determine indices based on Column-Major layout (standard for cuBLAS)
-                // A[row + col*LD]
-                int8_t a_val = A[i + l * ldA];
-                int8_t b_val = B[l + j * ldB];
+    #pragma omp parallel
+    {
+        // Thread-local buffer for packed A panel
+        alignas(64) int8_t A_pack[MC * KC];
 
-                // Cast to int32 BEFORE multiplying to avoid overflow
-                sum += static_cast<int32_t>(a_val) * static_cast<int32_t>(b_val);
+        #pragma omp for schedule(dynamic, 1)
+        for (int ic = 0; ic < m; ic += MC) {
+            const int mc = std::min(MC, m - ic);
+
+            for (int pc = 0; pc < k; pc += KC) {
+                const int kc = std::min(KC, k - pc);
+
+                // Pack A^T[ic:ic+mc, pc:pc+kc] for contiguous access over i
+                // Layout: A_pack[l * mc + i] = A^T[ic+i, pc+l]
+                for (int l = 0; l < kc; ++l) {
+                    int8_t* __restrict dst = &A_pack[l * mc];
+                    for (int i = 0; i < mc; ++i) {
+                        dst[i] = A[(pc + l) + (ic + i) * ldA];
+                    }
+                }
+
+                for (int jc = 0; jc < n; jc += NC) {
+                    const int nc = std::min(NC, n - jc);
+
+                    for (int j = 0; j < nc; ++j) {
+                        int32_t* __restrict c_ptr = &C[ic + (jc + j) * ldC];
+                        const int8_t* __restrict b_ptr = &B[pc + (jc + j) * ldB];
+
+                        // Apply beta on first K-block only
+                        if (pc == 0) {
+                            for (int i = 0; i < mc; ++i)
+                                c_ptr[i] *= beta;
+                        }
+
+#if defined(__AVX2__)
+                        // Unroll K by 4, process 8 elements at a time
+                        int l = 0;
+                        for (; l + 4 <= kc; l += 4) {
+                            __m256i b0 = _mm256_set1_epi32(alpha * (int32_t)b_ptr[l + 0]);
+                            __m256i b1 = _mm256_set1_epi32(alpha * (int32_t)b_ptr[l + 1]);
+                            __m256i b2 = _mm256_set1_epi32(alpha * (int32_t)b_ptr[l + 2]);
+                            __m256i b3 = _mm256_set1_epi32(alpha * (int32_t)b_ptr[l + 3]);
+
+                            const int8_t* a0 = &A_pack[(l + 0) * mc];
+                            const int8_t* a1 = &A_pack[(l + 1) * mc];
+                            const int8_t* a2 = &A_pack[(l + 2) * mc];
+                            const int8_t* a3 = &A_pack[(l + 3) * mc];
+
+                            int i = 0;
+                            for (; i + 8 <= mc; i += 8) {
+                                // Load 8 int8 values, sign-extend to int32
+                                __m256i a32_0 = _mm256_cvtepi8_epi32(_mm_loadl_epi64((__m128i*)(a0 + i)));
+                                __m256i a32_1 = _mm256_cvtepi8_epi32(_mm_loadl_epi64((__m128i*)(a1 + i)));
+                                __m256i a32_2 = _mm256_cvtepi8_epi32(_mm_loadl_epi64((__m128i*)(a2 + i)));
+                                __m256i a32_3 = _mm256_cvtepi8_epi32(_mm_loadl_epi64((__m128i*)(a3 + i)));
+
+                                __m256i c_vec = _mm256_loadu_si256((__m256i*)(c_ptr + i));
+
+                                c_vec = _mm256_add_epi32(c_vec, _mm256_mullo_epi32(a32_0, b0));
+                                c_vec = _mm256_add_epi32(c_vec, _mm256_mullo_epi32(a32_1, b1));
+                                c_vec = _mm256_add_epi32(c_vec, _mm256_mullo_epi32(a32_2, b2));
+                                c_vec = _mm256_add_epi32(c_vec, _mm256_mullo_epi32(a32_3, b3));
+
+                                _mm256_storeu_si256((__m256i*)(c_ptr + i), c_vec);
+                            }
+                            // Scalar remainder
+                            for (; i < mc; ++i) {
+                                c_ptr[i] += (int32_t)a0[i] * (alpha * (int32_t)b_ptr[l+0])
+                                          + (int32_t)a1[i] * (alpha * (int32_t)b_ptr[l+1])
+                                          + (int32_t)a2[i] * (alpha * (int32_t)b_ptr[l+2])
+                                          + (int32_t)a3[i] * (alpha * (int32_t)b_ptr[l+3]);
+                            }
+                        }
+                        // K remainder
+                        for (; l < kc; ++l) {
+                            int32_t bval = alpha * (int32_t)b_ptr[l];
+                            const int8_t* a_ptr = &A_pack[l * mc];
+                            for (int i = 0; i < mc; ++i) {
+                                c_ptr[i] += (int32_t)a_ptr[i] * bval;
+                            }
+                        }
+#else
+                        // Portable version with compiler auto-vectorization
+                        int l = 0;
+                        for (; l + 4 <= kc; l += 4) {
+                            int32_t b0 = alpha * static_cast<int32_t>(b_ptr[l + 0]);
+                            int32_t b1 = alpha * static_cast<int32_t>(b_ptr[l + 1]);
+                            int32_t b2 = alpha * static_cast<int32_t>(b_ptr[l + 2]);
+                            int32_t b3 = alpha * static_cast<int32_t>(b_ptr[l + 3]);
+
+                            const int8_t* a0 = &A_pack[(l + 0) * mc];
+                            const int8_t* a1 = &A_pack[(l + 1) * mc];
+                            const int8_t* a2 = &A_pack[(l + 2) * mc];
+                            const int8_t* a3 = &A_pack[(l + 3) * mc];
+
+                            #pragma omp simd
+                            for (int i = 0; i < mc; ++i) {
+                                c_ptr[i] += static_cast<int32_t>(a0[i]) * b0
+                                          + static_cast<int32_t>(a1[i]) * b1
+                                          + static_cast<int32_t>(a2[i]) * b2
+                                          + static_cast<int32_t>(a3[i]) * b3;
+                            }
+                        }
+                        for (; l < kc; ++l) {
+                            int32_t bval = alpha * static_cast<int32_t>(b_ptr[l]);
+                            const int8_t* a_ptr = &A_pack[l * mc];
+                            #pragma omp simd
+                            for (int i = 0; i < mc; ++i) {
+                                c_ptr[i] += static_cast<int32_t>(a_ptr[i]) * bval;
+                            }
+                        }
+#endif
+                    }
+                }
             }
-
-            // Apply Alpha and Beta
-            int32_t c_val = C[i + j * ldC];
-            C[i + j * ldC] = (alpha * sum) + (beta * c_val);
         }
     }
 }
+
 
 template <typename fp_ab, typename fp_c, typename fp_scalar>
 void gpu_gemm(cublasHandle_t handle, int m, int n, int k, 
@@ -195,13 +311,24 @@ void gpu_gemm<int8_t, int32_t, int32_t>(cublasHandle_t handle, int m, int n, int
                       const int8_t* B, int ldB,
                       const int32_t* beta, int32_t* C, int ldC) {
 
+    // https://docs.nvidia.com/cuda/cublas/#cublasltmatmul-regular-imma-conditions
+    
+    // Size
+    assert (ldA % 4 == 0);
+    assert (ldB % 4 == 0);
+    assert (ldC % 4 == 0);
+    // Alignement
+    assert ( (reinterpret_cast<uintptr_t>(A) % 16) == 0);
+    assert ( (reinterpret_cast<uintptr_t>(B) % 16) == 0);
+    assert ( (reinterpret_cast<uintptr_t>(C) % 16) == 0);
+    // T N
     CHECK_CUBLAS(cublasGemmEx(handle,
-                              CUBLAS_OP_N, CUBLAS_OP_N,
+                              CUBLAS_OP_T, CUBLAS_OP_N,
                               m, n, k,
-                              &alpha,
+                              alpha,
                               A, CUDA_R_8I, ldA,
                               B, CUDA_R_8I, ldB,
-                              &beta,
+                              beta,
                               C, CUDA_R_32I, ldC,
                               CUBLAS_COMPUTE_32I, // Compute in Int32
                               CUBLAS_GEMM_DEFAULT_TENSOR_OP));
@@ -327,7 +454,13 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
 
   const fp_scalar alpha = fp_scalar(1.0);
   const fp_scalar beta = fp_scalar(0.0);
-  const int ldA = m;
+
+ 
+  int ldA = m;
+  // Igemm assum transposed A!
+  if (name == "IGEMM")
+     ldA = k;
+
   const int ldB = k;
   const int ldC = m;
 
@@ -380,14 +513,14 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
 
   for (int iter = 0, current_iter = 0; iter < ITER_MAX && current_iter < ITER_MIN; iter++) {
 
-    if (bench_type == "cpu" || iter == 0) {
+    if (bench_type == "cpu" || ( iter == 0 && iter < iter_to_verify_born ) ) {
       bench(&current_iter_cpu, &min_time_cpu, [&]() {
         cpu_gemm<fp_ab, fp_c, fp_scalar>(m, n, k, alpha, A_host, ldA, B_host, ldB, beta, C_cpu,
                                          ldC);
       });
     }
 
-    if (bench_type == "gpu" || iter == 0) {
+    if (bench_type == "gpu" || ( iter == 0  && iter < iter_to_verify_born )) {
       bench(&current_iter_gpu, &min_time_gpu, [&]() {
         gpu_gemm<fp_ab, fp_c, fp_scalar>(handle, m, n, k, &alpha, A_device, ldA,
                                               B_device, ldB, &beta, C_device, ldC);
@@ -511,7 +644,7 @@ int main(int argc, char **argv) {
   errors += run<__half, __half, __half>(handle, 8192 * 3, 7168 * 3, 8192 * 2, "HGEMM-FP16", bench_type);
 
   CHECK_CUBLAS(cublasSetMathMode(handle, CUBLAS_DEFAULT_MATH));
-  errors += run<int8_t, int32_t, int32_t>(handle, 13824 * 2, 13824 * 2, 13824 , "IGEMM", bench_type);
+  errors += run<int8_t, int32_t, int32_t>(handle, 13824 * 2, 13824 * 2, 13824 * 2 , "IGEMM", bench_type);
 
   CHECK_CUBLAS(cublasDestroy(handle));
   MPI_Finalize();

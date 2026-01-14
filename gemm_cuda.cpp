@@ -15,12 +15,8 @@
 
 // CUDA & cuBLAS Headers
 #include <cublas_v2.h>
-#include <cuda_bf16.h>
-#include <cuda_fp16.h>
-#include <cuda_runtime.h>
 
-// Host BLAS Header (OpenBLAS, MKL, or Netlib)
-// Ensure you link with -lblas, -lopenblas, or -lmkl_rt
+// Host BLAS Header
 #include <cblas.h>
 
 #define TF32_MAX 3.401162134214653e+38

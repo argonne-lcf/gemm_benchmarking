@@ -1,7 +1,9 @@
 import numpy as np
 import re
+import glob
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
+from collections.abc import Iterable
 import sys
 import scipy.stats as ss
 from pathlib import Path
@@ -171,7 +173,7 @@ def parse(path,use_directory):
     if use_directory:
         unit = "Gflop/s"
         hostname = "unknown"
-        all_files = glob.glob(paths+"/*.txt")
+        all_files = glob.glob(path+"/*.txt")
         for path in all_files:
             n = Path(path).stem.split(".")[0]
             k = f"gpu0_{n}"
@@ -231,6 +233,12 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
 
     fig = plt.figure(layout="constrained", figsize=(20, num_plots * 4))
 
+    subfigs_initial = fig.subfigures(nrows=num_plots, ncols=1)
+    if not isinstance(subfigs_initial, Iterable):
+        subfigs = np.array([subfigs_i])
+    else:
+       subfigs = subfigs_initial
+
     subfigs = fig.subfigures(nrows=num_plots, ncols=1)
 
     tests_failure = {}
@@ -279,7 +287,7 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
     group = parser.add_mutually_exclusive_group(required=True)
-    parser.add_argument("-f", "--file", type=str, help="Path to the input file", required=True)
+    group.add_argument("-f", "--file", type=str, help="Path to the input file")
     group.add_argument("-d", "--directory", type=str, help="Path to the directory with input files")
     parser.add_argument("-o", "--output", type=str, help="Path to the output file")
 

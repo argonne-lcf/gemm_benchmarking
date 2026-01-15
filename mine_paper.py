@@ -166,30 +166,40 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
     add_box_letter(axs[1], chr(num + offset) + ")")
 
 
-def parse(path):
+def parse(path,use_directory):
     benchmarks_tests_results = defaultdict(list)
-    with open(path) as f:
-        for line in f:
-            # Skip first line
-            if "stagedir" in line:
-                continue
-            token = line.split("|")
-            # ...|gpu5t1_2D=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
-            k, v = token[-3].split("=")
-            unit = token[-1]
+    if use_directory:
+        unit = "Gflop/s"
+        hostname = "unknown"
+        all_files = glob.glob(paths+"/*.txt")
+        for path in all_files:
+            n = Path(path).stem.split(".")[0]
+            k = f"gpu0_{n}"
+            with open(path) as f:
+                for v in f:
+                    benchmarks_tests_results[(k,unit)].append((float(v),hostname))
+    else:
+        with open(path) as f:
+            for line in f:
+                # Skip first line
+                if "stagedir" in line:
+                    continue
+                token = line.split("|")
+                # ...|gpu5t1_2D=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
+                k, v = token[-3].split("=")
+                unit = token[-1]
 
-            # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
-            if "$nodes" in token[3]:
-                hostname = token[3].split()[1].split("=")[1]
-                if "," in hostname:
-                    raise ("Multiple hostname not supported")
-            else:
-                hostname = "unknown"
-            if unit.strip() == "GFLOPS":
-                unit = "Gflop/s"
-            benchmarks_tests_results[(k, unit)].append((float(v), hostname))
+                # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
+                if "$nodes" in token[3]:
+                    hostname = token[3].split()[1].split("=")[1]
+                    if "," in hostname:
+                        raise ("Multiple hostname not supported")
+                else:
+                    hostname = "unknown"
+                if unit.strip() == "GFLOPS":
+                    unit = "Gflop/s"
+                benchmarks_tests_results[(k, unit)].append((float(v), hostname))
     return benchmarks_tests_results
-
 
 def aggreg(benchmarks_tests_results):
     benchmarks_results = defaultdict(list)
@@ -268,7 +278,9 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
+    group = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument("-f", "--file", type=str, help="Path to the input file", required=True)
+    group.add_argument("-d", "--directory", type=str, help="Path to the directory with input files")
     parser.add_argument("-o", "--output", type=str, help="Path to the output file")
 
     parser.add_argument(
@@ -278,7 +290,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    path = args.file
+    path = args.directory if args.directory else args.file
+    use_directory = True if args.directory else False
 
     remove_low_performing_nodes, clustering = True, True
     if args.no_post_process == True:
@@ -287,6 +300,6 @@ if __name__ == "__main__":
     output_name = args.output if args.output else Path(path).stem + ".png"
     print(output_name)
 
-    d = parse(path)
+    d = parse(path, use_directory)
     d_aggreg_np = aggreg(d)
     plot(output_name, d_aggreg_np, remove_low_performing_nodes, clustering)

@@ -295,12 +295,16 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
       }
 #ifdef SAVE
       {
-	std::vector<char[MPI_MAX_PROCESSOR_NAME]> node_names(gather_size);
+	std::vector<std::array<char, MPI_MAX_PROCESSOR_NAME>> node_names(gather_size);
+	//std::vector<char[MPI_MAX_PROCESSOR_NAME]> node_names(gather_size);
 	MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names.data(), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
         std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
+        // for (auto const &x : node_names)
+	//   std::cout << x.data() << std::endl;
+
         for (int i=0;i<gather_size;i++)
-          fout << flops[i] << "," << node_names[i] << std::endl;
+          fout << flops[i] << "," << node_names[i].data() << std::endl;
       }
 #endif
       std::sort(flops.begin(), flops.end());

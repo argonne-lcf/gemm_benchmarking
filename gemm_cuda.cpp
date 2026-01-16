@@ -554,12 +554,12 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
       }
 #ifdef SAVE
       {
-	std::vector<char[MPI_MAX_PROCESSOR_NAME]> node_names(gather_size);
+	std::vector<std::array<char, MPI_MAX_PROCESSOR_NAME>> node_names(gather_size);
 	MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names.data(), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
         std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
         for (int i=0;i<gather_size;i++)
-          fout << flops[i] << "," << node_names[i] << std::endl;
+          fout << flops[i] << "," << node_names[i].data() << std::endl;
       }
 #endif
       std::sort(flops.begin(), flops.end());

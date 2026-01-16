@@ -586,7 +586,7 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
                MPI_SUB_COMM_GATHER);
     #ifdef SAVE
     MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, NULL, 0, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
-    MPI_Gather(&rank_on_node,1, MPI_INT, local_ranks.data(), 1, MPI_INT, root_rank,MPI_SUB_COMM_GATHER);
+    MPI_Gather(&rank_on_node,1, MPI_INT, NULL, 0, MPI_INT, root_rank,MPI_SUB_COMM_GATHER);
     #endif
 
   }

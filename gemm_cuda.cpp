@@ -533,6 +533,9 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
   int root_rank = 0;
   int world_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  int len;
+  char node_name[MPI_MAX_PROCESSOR_NAME];
+  MPI_Get_processor_name(node_name, &len);
 
   if (world_rank == root_rank) {
     int gather_size;
@@ -551,10 +554,12 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
       }
 #ifdef SAVE
       {
+	std::vector<char[MPI_MAX_PROCESSOR_NAME]> node_names(gather_size);
+	MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names.data(), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
         std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
-        for (auto const &x : flops)
-          fout << x << '\n';
+        for (int i=0;i<gather_size;i++)
+          fout << flops[i] << "," << node_names[i] << std::endl;
       }
 #endif
       std::sort(flops.begin(), flops.end());
@@ -572,6 +577,10 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
   } else if (MPI_SUB_COMM_GATHER != MPI_COMM_NULL) {
     MPI_Gather(&min_time, 1, MPI_UNSIGNED_LONG, NULL, 0, MPI_UNSIGNED_LONG, root_rank,
                MPI_SUB_COMM_GATHER);
+    #ifdef SAVE
+    MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, NULL, 0, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
+    #endif
+
   }
 
   int mpi_errors = 0;
@@ -610,6 +619,9 @@ int main(int argc, char **argv) {
   int errors = 0;
 
 #ifdef SAVE  
+  // if a third argument is given, the output directory is the name given
+  // otherwise it's "data"
+  if(argc == 3) directory_name = argv[2];
   if(my_rank == 0) std::filesystem::create_directory(directory_name);
   MPI_Barrier(MPI_COMM_WORLD);
 #endif

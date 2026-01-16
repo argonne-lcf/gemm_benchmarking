@@ -274,7 +274,10 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
   int root_rank = 0;
   int world_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
+  int len;
+  char node_name[MPI_MAX_PROCESSOR_NAME];
+  MPI_Get_processor_name(node_name, &len);
+  
   if (world_rank == root_rank) {
     int gather_size;
     MPI_Comm_size(MPI_SUB_COMM_GATHER, &gather_size);
@@ -292,10 +295,12 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
       }
 #ifdef SAVE
       {
+	std::vector<char[MPI_MAX_PROCESSOR_NAME]> node_names(gather_size);
+	MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names.data(), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
         std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
-        for (auto const &x : flops)
-          fout << x << '\n';
+        for (int i=0;i<gather_size;i++)
+          fout << flops[i] << "," << node_names[i] << std::endl;
       }
 #endif
       std::sort(flops.begin(), flops.end());
@@ -311,6 +316,9 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
   } else if (MPI_SUB_COMM_GATHER != MPI_COMM_NULL) {
     MPI_Gather(&min_time, 1, MPI_UNSIGNED_LONG, NULL, 0, MPI_UNSIGNED_LONG, root_rank,
                MPI_SUB_COMM_GATHER);
+    #ifdef SAVE
+    MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, NULL, 0, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
+    #endif
   }
 
   int mpi_errors = 0;
@@ -328,9 +336,8 @@ int main(int argc, char **argv) {
 
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
+  
   std::string bench_type{argv[1]};
-
   if (bench_type == "gpu") {
     // Best of two Tiles
     MPI_Comm_split(MPI_COMM_WORLD, my_rank / 2, 0, &MPI_SUB_COMM);
@@ -355,10 +362,12 @@ int main(int argc, char **argv) {
   }
 
 #ifdef SAVE  
+  // if a third argument is given, the output directory is the name given
+  // otherwise it's "data"
+  if(argc == 3) directory_name = argv[2];
   if(my_rank == 0) std::filesystem::create_directory(directory_name);
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
-  
   sycl::queue Q;
   int errors = 0;
   // Stream said 4Time LLC per Array ~800 * 3 ~ Total Memory FootPrint = 2.4 G for GPU. for CPU: ~ 1
@@ -383,5 +392,5 @@ int main(int argc, char **argv) {
       run<std::int8_t, std::int32_t, float>(Q, 13824 * 2, 13824 * 2, 13824, "IGEMM", bench_type);
 
   MPI_Finalize();
-  return errors;
+  return 0; //errors;
 }

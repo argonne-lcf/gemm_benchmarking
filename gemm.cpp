@@ -5,6 +5,7 @@
 #include <limits>
 #include <random>
 #include <vector>
+#include <filesystem>
 
 #include <sycl/sycl.hpp>
 #define MKL_F16 ::sycl::half
@@ -24,6 +25,11 @@
 
 #ifndef ITER_MIN
 #define ITER_MIN 20
+#endif
+
+#ifdef SAVE
+// name of created directory for output if SAVE is defined
+std::string directory_name="data";
 #endif
 
 // Communicator for a Pair of rank
@@ -286,7 +292,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
       }
 #ifdef SAVE
       {
-        std::string filename = name + ".txt";
+        std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
         for (auto const &x : flops)
           fout << x << '\n';
@@ -348,6 +354,11 @@ int main(int argc, char **argv) {
     MPI_SUB_COMM_GATHER = MPI_COMM_WORLD;
   }
 
+#ifdef SAVE  
+  if(my_rank == 0) std::filesystem::create_directory(directory_name);
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  
   sycl::queue Q;
   int errors = 0;
   // Stream said 4Time LLC per Array ~800 * 3 ~ Total Memory FootPrint = 2.4 G for GPU. for CPU: ~ 1

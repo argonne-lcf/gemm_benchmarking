@@ -9,6 +9,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 // MPI Header
 #include <mpi.h>
@@ -29,6 +30,11 @@
 
 #ifndef ITER_MIN
 #define ITER_MIN 20
+#endif
+
+#ifdef SAVE
+// name of created directory for output if SAVE is defined
+std::string directory_name="data";
 #endif
 
 inline __half operator/(const __half &lhs, int rhs) {
@@ -545,7 +551,7 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
       }
 #ifdef SAVE
       {
-        std::string filename = name + ".txt";
+        std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
         for (auto const &x : flops)
           fout << x << '\n';
@@ -603,6 +609,11 @@ int main(int argc, char **argv) {
 
   int errors = 0;
 
+#ifdef SAVE  
+  if(my_rank == 0) std::filesystem::create_directory(directory_name);
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  
   CHECK_CUBLAS(cublasSetMathMode(handle, CUBLAS_DEFAULT_MATH));
   errors += run<double, double, double>(handle, 12000, 12000, 12000, "DGEMM", bench_type);
 

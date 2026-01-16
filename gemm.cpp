@@ -277,10 +277,17 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
   int len;
   char node_name[MPI_MAX_PROCESSOR_NAME];
   MPI_Get_processor_name(node_name, &len);
-  
+
+  // Create a communicator for just the local node so we can find the rank id 
+  MPI_Comm node_comm;
+  MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, world_rank, MPI_INFO_NULL, &node_comm);
+  int rank_on_node;
+  MPI_Comm_rank(node_comm, &rank_on_node);
+
   if (world_rank == root_rank) {
     int gather_size;
     MPI_Comm_size(MPI_SUB_COMM_GATHER, &gather_size);
+    int sub_size = 1;
 
     std::vector<double> flops(gather_size);
     {
@@ -288,7 +295,6 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
       MPI_Gather(&min_time, 1, MPI_UNSIGNED_LONG, min_times.data(), 1, MPI_UNSIGNED_LONG, root_rank,
                  MPI_SUB_COMM_GATHER);
       {
-        int sub_size;
         MPI_Comm_size(MPI_SUB_COMM, &sub_size);
         std::transform(min_times.begin(), min_times.end(), flops.begin(),
                        [&](unsigned long val) { return (2. * m * n * k * sub_size) / val; });
@@ -296,15 +302,14 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 #ifdef SAVE
       {
 	std::vector<std::array<char, MPI_MAX_PROCESSOR_NAME>> node_names(gather_size);
-	//std::vector<char[MPI_MAX_PROCESSOR_NAME]> node_names(gather_size);
+	std::vector<int> local_ranks(gather_size);
 	MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names.data(), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
+	MPI_Gather(&rank_on_node,1, MPI_INT, local_ranks.data(), 1, MPI_INT, root_rank,MPI_SUB_COMM_GATHER);
         std::string filename = directory_name+"/"+name + ".txt";
         std::ofstream fout(filename.c_str());
-        // for (auto const &x : node_names)
-	//   std::cout << x.data() << std::endl;
 
         for (int i=0;i<gather_size;i++)
-          fout << flops[i] << "," << node_names[i].data() << std::endl;
+          fout << flops[i] << "," << "GFlop/s," << "gpu" << local_ranks[i] / sub_size <<"," << node_names[i].data() << std::endl;
       }
 #endif
       std::sort(flops.begin(), flops.end());
@@ -322,6 +327,7 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
                MPI_SUB_COMM_GATHER);
     #ifdef SAVE
     MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, NULL, 0, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
+    MPI_Gather(&rank_on_node,1, MPI_INT, NULL, 0, MPI_INT, root_rank,MPI_SUB_COMM_GATHER);
     #endif
   }
 

@@ -171,15 +171,17 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
 def parse(path,use_directory):
     benchmarks_tests_results = defaultdict(list)
     if use_directory:
-        unit = "Gflop/s"
-        hostname = "unknown"
         all_files = glob.glob(path+"/*.txt")
         for path in all_files:
             n = Path(path).stem.split(".")[0]
-            k = f"gpu0_{n}"
             with open(path) as f:
                 for v in f:
-                    benchmarks_tests_results[(k,unit)].append((float(v),hostname))
+                    v_array=v.split(",")
+                    measurement = float(v_array[0])
+                    unit = v_array[1]
+                    k = f"{v_array[2]}_{n}"
+                    hostname = v_array[3].strip()
+                    benchmarks_tests_results[(k,unit)].append((measurement,hostname))
     else:
         with open(path) as f:
             for line in f:

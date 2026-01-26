@@ -172,7 +172,7 @@ def parse(path,use_directory):
     benchmarks_tests_results = defaultdict(list)
     if use_directory:
         all_files = glob.glob(path+"/*.txt")
-        for path in all_files:
+        for path in sorted(all_files):
             n = Path(path).stem.split(".")[0]
             with open(path) as f:
                 for v in f:

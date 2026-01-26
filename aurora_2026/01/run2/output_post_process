@@ -1,0 +1,88 @@
+Namespace(file=None, directory='data', output=None, no_post_process=False)
+data.png
+gpu_DGEMM (TFLOP/s)
+  - Number of outliner removed (<19.1, >=20.9) 24
+   -Min 19.1
+   -Q1 19.9
+   -Median 20.0
+   -Q3 20.2
+   -Max 20.9
+   -Sample Size 49127
+   -(Q3-Q1)/median 1.51%
+   -Gaussian RMSE 22
+gpu_HGEMM-BF16 (TFLOP/s)
+  - Number of outliner removed (<374.1, >=438.8) 13
+   -Min 374.5
+   -Q1 404.9
+   -Median 410.6
+   -Q3 416.2
+   -Max 438.6
+   -Sample Size 49139
+   -(Q3-Q1)/median 2.75%
+   -Gaussian RMSE 21
+gpu_HGEMM-FP16 (TFLOP/s)
+  - Number of outliner removed (<390.6, >=449.7) 45
+   -Min 390.6
+   -Q1 416.1
+   -Median 419.6
+   -Q3 425.9
+   -Max 449.7
+   -Sample Size 49107
+   -(Q3-Q1)/median 2.34%
+   -Gaussian RMSE 59
+   -Gaussian RMSE 38
+   -Gaussian RMSE 44
+   -Gaussian RMSE 16
+   -Gaussian RMSE 63
+gpu_IGEMM (TFLOP/s)
+  - Number of outliner removed (<764.6, >=899.2) 15
+   -Min 764.7
+   -Q1 830.0
+   -Median 842.4
+   -Q3 853.0
+   -Max 898.9
+   -Sample Size 49137
+   -(Q3-Q1)/median 2.73%
+   -Gaussian RMSE 44
+gpu_SGEMM-FP32 (TFLOP/s)
+  - Number of outliner removed (<42.8, >=42.9) 14
+   -Min 42.8
+   -Q1 42.8
+   -Median 42.8
+   -Q3 42.9
+   -Max 42.9
+   -Sample Size 49136
+   -(Q3-Q1)/median 0.02%
+   -Gaussian RMSE 122
+   -Gaussian RMSE 83
+   -Gaussian RMSE 122
+gpu_SGEMM-TF32 (TFLOP/s)
+  - Number of outliner removed (<189.2, >=222.0) 29
+   -Min 189.3
+   -Q1 204.3
+   -Median 207.6
+   -Q3 210.7
+   -Max 221.9
+   -Sample Size 49122
+   -(Q3-Q1)/median 3.08%
+   -Gaussian RMSE 29
+Hostname Outliner Removed Exclusif per Failure Group:
+Counter({('gpu_HGEMM-FP16',): 32,
+         ('gpu_SGEMM-TF32',): 15,
+         ('gpu_SGEMM-FP32',): 13,
+         ('gpu_DGEMM',): 12,
+         ('gpu_IGEMM',): 9,
+         ('gpu_DGEMM', 'gpu_HGEMM-FP16'): 4,
+         ('gpu_HGEMM-BF16',): 4,
+         ('gpu_HGEMM-FP16', 'gpu_SGEMM-TF32'): 4,
+         ('gpu_DGEMM', 'gpu_HGEMM-BF16'): 3,
+         ('gpu_HGEMM-BF16', 'gpu_SGEMM-TF32'): 2,
+         ('gpu_HGEMM-FP16', 'gpu_IGEMM'): 2,
+         ('gpu_IGEMM', 'gpu_SGEMM-TF32'): 2,
+         ('gpu_DGEMM', 'gpu_HGEMM-BF16', 'gpu_SGEMM-TF32'): 1,
+         ('gpu_DGEMM', 'gpu_HGEMM-BF16', 'gpu_HGEMM-FP16', 'gpu_SGEMM-TF32'): 1,
+         ('gpu_DGEMM', 'gpu_SGEMM-TF32'): 1,
+         ('gpu_DGEMM', 'gpu_HGEMM-BF16', 'gpu_HGEMM-FP16', 'gpu_IGEMM', 'gpu_SGEMM-TF32'): 1,
+         ('gpu_DGEMM', 'gpu_IGEMM', 'gpu_SGEMM-TF32'): 1,
+         ('gpu_HGEMM-BF16', 'gpu_HGEMM-FP16'): 1,
+         ('gpu_SGEMM-FP32', 'gpu_SGEMM-TF32'): 1})

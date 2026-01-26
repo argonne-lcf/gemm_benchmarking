@@ -1,0 +1,62 @@
+Namespace(file=None, directory='data', output=None, no_post_process=True)
+data.png
+gpu_DGEMM (TFLOP/s)
+ len here: 49152 0
+ len here: 49152,    REAL Number of outliner removed: 0
+   -Min 18.6
+   -Q1 20.0
+   -Median 20.2
+   -Q3 20.3
+   -Max 21.2
+   -Sample Size 49152
+   -(Q3-Q1)/median 1.51%
+gpu_HGEMM-BF16 (TFLOP/s)
+ len here: 49152 0
+ len here: 49152,    REAL Number of outliner removed: 0
+   -Min 361.3
+   -Q1 404.5
+   -Median 410.1
+   -Q3 415.7
+   -Max 441.7
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.75%
+gpu_HGEMM-FP16 (TFLOP/s)
+ len here: 49152 0
+ len here: 49152,    REAL Number of outliner removed: 0
+   -Min 381.6
+   -Q1 416.5
+   -Median 420.0
+   -Q3 426.2
+   -Max 495.9
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.31%
+gpu_IGEMM (TFLOP/s)
+ len here: 49152 0
+ len here: 49152,    REAL Number of outliner removed: 0
+   -Min 723.1
+   -Q1 829.3
+   -Median 842.1
+   -Q3 852.6
+   -Max 906.0
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.76%
+gpu_SGEMM-FP32 (TFLOP/s)
+ len here: 49152 0
+ len here: 49152,    REAL Number of outliner removed: 0
+   -Min 41.0
+   -Q1 42.8
+   -Median 42.8
+   -Q3 42.9
+   -Max 45.7
+   -Sample Size 49152
+   -(Q3-Q1)/median 0.03%
+gpu_SGEMM-TF32 (TFLOP/s)
+ len here: 49152 0
+ len here: 49152,    REAL Number of outliner removed: 0
+   -Min 177.6
+   -Q1 204.2
+   -Median 207.5
+   -Q3 210.6
+   -Max 225.6
+   -Sample Size 49152
+   -(Q3-Q1)/median 3.09%

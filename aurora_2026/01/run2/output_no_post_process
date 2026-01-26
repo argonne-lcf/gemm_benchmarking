@@ -1,0 +1,50 @@
+Namespace(file=None, directory='data', output=None, no_post_process=True)
+data.png
+gpu_DGEMM (TFLOP/s)
+   -Min 18.5
+   -Q1 19.9
+   -Median 20.0
+   -Q3 20.2
+   -Max 21.2
+   -Sample Size 49152
+   -(Q3-Q1)/median 1.51%
+gpu_HGEMM-BF16 (TFLOP/s)
+   -Min 361.6
+   -Q1 404.9
+   -Median 410.6
+   -Q3 416.2
+   -Max 442.9
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.75%
+gpu_HGEMM-FP16 (TFLOP/s)
+   -Min 381.4
+   -Q1 416.1
+   -Median 419.6
+   -Q3 425.9
+   -Max 483.4
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.35%
+gpu_IGEMM (TFLOP/s)
+   -Min 719.8
+   -Q1 830.0
+   -Median 842.4
+   -Q3 853.0
+   -Max 906.8
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.73%
+gpu_SGEMM-FP32 (TFLOP/s)
+   -Min 42.8
+   -Q1 42.8
+   -Median 42.8
+   -Q3 42.9
+   -Max 45.7
+   -Sample Size 49152
+   -(Q3-Q1)/median 0.02%
+gpu_SGEMM-TF32 (TFLOP/s)
+   -Min 164.3
+   -Q1 204.3
+   -Median 207.6
+   -Q3 210.7
+   -Max 226.2
+   -Sample Size 49152
+   -(Q3-Q1)/median 3.08%

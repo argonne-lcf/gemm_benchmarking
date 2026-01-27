@@ -1,6 +1,6 @@
 import numpy as np
 import re
-import glob
+from pathlib import Path
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from collections.abc import Iterable
@@ -171,17 +171,13 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
 def parse(path,use_directory):
     benchmarks_tests_results = defaultdict(list)
     if use_directory:
-        all_files = glob.glob(path+"/*.txt")
-        for path in sorted(all_files):
-            n = Path(path).stem.split(".")[0]
-            with open(path) as f:
-                for v in f:
-                    v_array=v.split(",")
-                    measurement = float(v_array[0])
-                    unit = v_array[1]
-                    k = f"{v_array[2]}_{n}"
-                    hostname = v_array[3].strip()
-                    benchmarks_tests_results[(k,unit)].append((measurement,hostname))
+        for file_path in sorted(path.glob("*.txt")):
+            gemm_type = file_path.stem.split(".")[0]
+            with file_path.open() as f:
+                for line in f:
+                    # 19787.7,GFlop/s,gpu0,x4102c5s5b0n0
+                    measurement, unit, device_id, hostname = line.strip().split(",")
+                    benchmarks_tests_results[(f"{device_id}_{gemm_type}",unit)].append((float(measurement),hostname))
     else:
         with open(path) as f:
             for line in f:
@@ -290,8 +286,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--file", type=str, help="Path to the input file")
-    group.add_argument("-d", "--directory", type=str, help="Path to the directory with input files")
-    parser.add_argument("-o", "--output", type=str, help="Path to the output file")
+    group.add_argument("-d", "--directory", type=Path, help="Path to the directory with input files")
+    parser.add_argument("-o", "--output", type=Path, help="Path to the output file")
 
     parser.add_argument(
         "--no-post-process", action="store_true", help="No outliner removal, no clustering"

@@ -104,20 +104,21 @@ def plot_hist_with_clustering(ax, data, n):
         # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html#matplotlib-pyplot-hist
         # Alternatively, plot pre-computed bins and counts using hist() by treating each bin as a single point with a weight equal to its count
         ax.hist(bins[:-1], bins, alpha=0.5, weights=counts, label=f"Cluster {ii}")
-        ax.legend(fontsize=16) 
+        ax.legend(fontsize=16)
         add_gaussian(ax, subset, counts, bins)
+
+
 #        ss.probplot(subset, dist="norm", plot=ax[2])
 
 
 def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=False):
-
     q1 = np.quantile(benchmark_array, 0.25)
     q3 = np.quantile(benchmark_array, 0.75)
     q2 = np.quantile(benchmark_array, 0.5)
     max_val = max(benchmark_array)
     min_val = min(benchmark_array)
     med_val = np.median(benchmark_array)
-    iqr=(q3 - q1)
+    iqr = q3 - q1
     percent_between_q3_q1 = iqr / med_val
     sample_size = len(benchmark_array)
 
@@ -129,14 +130,19 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
     print(f"   -Sample Size {sample_size}")
     print(f"   -(Q3-Q1)/median {percent_between_q3_q1:.2%}")
 
-    subfig.suptitle(f"{name_remap[name].upper()} (N: {sample_size}, Median: {med_val:.1f} {u})", fontsize=20)
+    subfig.suptitle(
+        f"{name_remap[name].upper()} (N: {sample_size}, Median: {med_val:.1f} {u})",
+        fontsize=20,
+    )
     axs = subfig.subplots(nrows=1, ncols=2, gridspec_kw={"width_ratios": [3, 1]})
 
     if clustering:
         plot_hist_with_clustering(axs[0], benchmark_array, CLUSTER_NUMBER[name])
     else:
         # to match what is done in the clustering
-        bins = np.linspace(benchmark_array.min(), benchmark_array.max(), int(np.sqrt(sample_size)))
+        bins = np.linspace(
+            benchmark_array.min(), benchmark_array.max(), int(np.sqrt(sample_size))
+        )
         counts, _ = np.histogram(benchmark_array, bins=bins)
         axs[0].hist(bins[:-1], bins, alpha=0.5, weights=counts)
 
@@ -157,7 +163,9 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
     hardware = name.split("_")[0].upper()
     axs[0].set_ylabel(f"# {hardware}s", fontsize=18)
     if clustering:
-        axs[0].set_title("Histogram (with K-means Clustering and fitted Gaussian)", fontsize=18)
+        axs[0].set_title(
+            "Histogram (with K-means Clustering and fitted Gaussian)", fontsize=18
+        )
     else:
         axs[0].set_title("Histogram", fontsize=18)
     add_box_letter(axs[0], chr(num) + ")")
@@ -172,16 +180,17 @@ def parse(paths):
     benchmarks_tests_results = defaultdict(list)
     unit = "Gflop/s"
     hostname = "unknown"
-    all_files = glob.glob(paths+"/*.txt")
-#    paths=["/home/bertoni/gemm_sow/HGEMM-BF16.txt", "/home/bertoni/gemm_sow/HGEMM-FP16.txt" ]
+    all_files = glob.glob(paths + "/*.txt")
+    #    paths=["/home/bertoni/gemm_sow/HGEMM-BF16.txt", "/home/bertoni/gemm_sow/HGEMM-FP16.txt" ]
     for path in sorted(all_files):
         n = Path(path).stem.split(".")[0]
         k = f"gpu0_{n}"
         with open(path) as f:
             for v in f:
-                benchmarks_tests_results[(k,unit)].append((float(v),hostname))
-                
+                benchmarks_tests_results[(k, unit)].append((float(v), hostname))
+
     return benchmarks_tests_results
+
 
 # def parse(path):
 #     benchmarks_tests_results = defaultdict(list)
@@ -230,7 +239,9 @@ def scale(name, x):
     return ("TFLOP/s", x / 1e3)
 
 
-def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clustering=False):
+def plot(
+    output_name, benchmarks_results, remove_low_performing_nodes=False, clustering=False
+):
     num_plots = len(benchmarks_results)
 
     plt.rc("xtick", labelsize=18)
@@ -238,17 +249,16 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
 
     fig = plt.figure(layout="constrained", figsize=(20, num_plots * 4))
     subfigs_i = fig.subfigures(nrows=num_plots, ncols=1)
-#    if not isinstance(subfigs_i, list):
-#        subfigs = [subfigs_i]
-#    else:
-#        print("here")
-#        subfigs = subfigs_i
+    #    if not isinstance(subfigs_i, list):
+    #        subfigs = [subfigs_i]
+    #    else:
+    #        print("here")
+    #        subfigs = subfigs_i
     subfigs = subfigs_i
     tests_failure = {}
-    
+
     it = enumerate(zip(subfigs, benchmarks_results.items()), start=ord("a"))
     for i, (subfig, ((name, _), flop_hostname)) in it:
-
         flops, hostnames = zip(*flop_hostname)
         flops = np.array(flops)
 
@@ -268,8 +278,12 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
                 f"  - Number of outliner removed (<{min_thr:.1f}, >={max_thr:.1f}) {len(hostname_outliners)}"
             )
         print(f" len here: {len(flops_scaled)} {min_thr}")
-        flops_scaled_shrank = flops_scaled[(flops_scaled > min_thr) & (flops_scaled <= max_thr)]
-        print(f" len here: {len(flops_scaled_shrank)},    REAL Number of outliner removed: {len(flops_scaled) - len(flops_scaled_shrank)}")
+        flops_scaled_shrank = flops_scaled[
+            (flops_scaled > min_thr) & (flops_scaled <= max_thr)
+        ]
+        print(
+            f" len here: {len(flops_scaled_shrank)},    REAL Number of outliner removed: {len(flops_scaled) - len(flops_scaled_shrank)}"
+        )
         plot_subfigs(flops_scaled_shrank, name, unit, subfig, i, num_plots, clustering)
 
     if remove_low_performing_nodes:
@@ -279,7 +293,9 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
             for hostname in hostnames:
                 hostname_failures[hostname].append(name)
         # Now count oh many keys
-        exclusif_count_per_types = Counter(tuple(v) for (k, v) in hostname_failures.items())
+        exclusif_count_per_types = Counter(
+            tuple(v) for (k, v) in hostname_failures.items()
+        )
         print("Hostname Outliner Removed Exclusif per Failure Group:")
 
         pprint.pprint(exclusif_count_per_types)
@@ -292,11 +308,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--file", type=str, help="Path to the input file")
-    group.add_argument("-d", "--directory", type=str, help="Path to the directory with input files")
+    group.add_argument(
+        "-d", "--directory", type=str, help="Path to the directory with input files"
+    )
     parser.add_argument("-o", "--output", type=str, help="Path to the output file")
 
     parser.add_argument(
-        "--no-post-process", action="store_true", help="No outliner removal, no clustering"
+        "--no-post-process",
+        action="store_true",
+        help="No outliner removal, no clustering",
     )
 
     args = parser.parse_args()
@@ -308,10 +328,12 @@ if __name__ == "__main__":
     if args.no_post_process == True:
         remove_low_performing_nodes, clustering = False, False
 
-    output_name = args.output if args.output else Path(path).stem.replace("*","o") + ".png"
+    output_name = (
+        args.output if args.output else Path(path).stem.replace("*", "o") + ".png"
+    )
     print(output_name)
 
     d = parse(path)
-#    print(d)
+    #    print(d)
     d_aggreg_np = aggreg(d)
     plot(output_name, d_aggreg_np, remove_low_performing_nodes, clustering)

@@ -104,20 +104,21 @@ def plot_hist_with_clustering(ax, data, n):
         # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html#matplotlib-pyplot-hist
         # Alternatively, plot pre-computed bins and counts using hist() by treating each bin as a single point with a weight equal to its count
         ax.hist(bins[:-1], bins, alpha=0.5, weights=counts, label=f"Cluster {ii}")
-        ax.legend(fontsize=16) 
+        ax.legend(fontsize=16)
         add_gaussian(ax, subset, counts, bins)
+
+
 #        ss.probplot(subset, dist="norm", plot=ax[2])
 
 
 def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=False):
-
     q1 = np.quantile(benchmark_array, 0.25)
     q3 = np.quantile(benchmark_array, 0.75)
     q2 = np.quantile(benchmark_array, 0.5)
     max_val = max(benchmark_array)
     min_val = min(benchmark_array)
     med_val = np.median(benchmark_array)
-    iqr=(q3 - q1)
+    iqr = q3 - q1
     percent_between_q3_q1 = iqr / med_val
     sample_size = len(benchmark_array)
 
@@ -129,14 +130,19 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
     print(f"   -Sample Size {sample_size}")
     print(f"   -(Q3-Q1)/median {percent_between_q3_q1:.2%}")
 
-    subfig.suptitle(f"{name_remap[name].upper()} (N: {sample_size}, Median: {med_val:.1f} {u})", fontsize=20)
+    subfig.suptitle(
+        f"{name_remap[name].upper()} (N: {sample_size}, Median: {med_val:.1f} {u})",
+        fontsize=20,
+    )
     axs = subfig.subplots(nrows=1, ncols=2, gridspec_kw={"width_ratios": [3, 1]})
 
     if clustering:
         plot_hist_with_clustering(axs[0], benchmark_array, CLUSTER_NUMBER[name])
     else:
         # to match what is done in the clustering
-        bins = np.linspace(benchmark_array.min(), benchmark_array.max(), int(np.sqrt(sample_size)))
+        bins = np.linspace(
+            benchmark_array.min(), benchmark_array.max(), int(np.sqrt(sample_size))
+        )
         counts, _ = np.histogram(benchmark_array, bins=bins)
         axs[0].hist(bins[:-1], bins, alpha=0.5, weights=counts)
 
@@ -157,7 +163,9 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
     hardware = name.split("_")[0].upper()
     axs[0].set_ylabel(f"# {hardware}s", fontsize=18)
     if clustering:
-        axs[0].set_title("Histogram (with K-means Clustering and fitted Gaussian)", fontsize=18)
+        axs[0].set_title(
+            "Histogram (with K-means Clustering and fitted Gaussian)", fontsize=18
+        )
     else:
         axs[0].set_title("Histogram", fontsize=18)
     add_box_letter(axs[0], chr(num) + ")")
@@ -168,38 +176,50 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
     add_box_letter(axs[1], chr(num + offset) + ")")
 
 
-def parse(path,use_directory):
+def parse_file_our_format(file_path):
+    gemm_type = file_path.stem.split(".")[0]
+    with file_path.open() as f:
+        for line in f:
+            # 19787.7,GFlop/s,gpu0,x4102c5s5b0n0
+            measurement, unit, device_id, hostname = line.strip().split(",")
+            yield ((f"{device_id}_{gemm_type}", unit), (float(measurement), hostname))
+
+
+def parse_file_reframe(file_path):
+    with path.open() as f:
+        for line in f:
+            # Skip first line
+            if "stagedir" in line:
+                continue
+            token = line.split("|")
+            # ...|gpu5t1_2D=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
+            k, v = token[-3].split("=")
+            unit = token[-1]
+
+            # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
+            if "$nodes" in token[3]:
+                hostname = token[3].split()[1].split("=")[1]
+                if "," in hostname:
+                    raise ("Multiple hostname not supported")
+            else:
+                hostname = "unknown"
+            if unit.strip() == "GFLOPS":
+                unit = "Gflop/s"
+        yield ((k, unit), (float(v), hostname))
+
+
+def parse(path, use_directory):
     benchmarks_tests_results = defaultdict(list)
     if use_directory:
         for file_path in sorted(path.glob("*.txt")):
-            gemm_type = file_path.stem.split(".")[0]
-            with file_path.open() as f:
-                for line in f:
-                    # 19787.7,GFlop/s,gpu0,x4102c5s5b0n0
-                    measurement, unit, device_id, hostname = line.strip().split(",")
-                    benchmarks_tests_results[(f"{device_id}_{gemm_type}",unit)].append((float(measurement),hostname))
+            for k, v in parse_file_our_format(file_path):
+                benchmarks_tests_results[k].append(v)
     else:
-        with open(path) as f:
-            for line in f:
-                # Skip first line
-                if "stagedir" in line:
-                    continue
-                token = line.split("|")
-                # ...|gpu5t1_2D=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
-                k, v = token[-3].split("=")
-                unit = token[-1]
+        for k, v in parse_file_reframe(file_path):
+            benchmarks_tests_results[k].append(v)
 
-                # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
-                if "$nodes" in token[3]:
-                    hostname = token[3].split()[1].split("=")[1]
-                    if "," in hostname:
-                        raise ("Multiple hostname not supported")
-                else:
-                    hostname = "unknown"
-                if unit.strip() == "GFLOPS":
-                    unit = "Gflop/s"
-                benchmarks_tests_results[(k, unit)].append((float(v), hostname))
     return benchmarks_tests_results
+
 
 def aggreg(benchmarks_tests_results):
     benchmarks_results = defaultdict(list)
@@ -223,7 +243,9 @@ def scale(name, x):
     return ("TFLOP/s", x / 1e3)
 
 
-def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clustering=False):
+def plot(
+    output_name, benchmarks_results, remove_low_performing_nodes=False, clustering=False
+):
     num_plots = len(benchmarks_results)
 
     plt.rc("xtick", labelsize=18)
@@ -235,7 +257,7 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
     if not isinstance(subfigs_initial, Iterable):
         subfigs = np.array([subfigs_i])
     else:
-       subfigs = subfigs_initial
+        subfigs = subfigs_initial
 
     subfigs = fig.subfigures(nrows=num_plots, ncols=1)
 
@@ -243,7 +265,6 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
 
     it = enumerate(zip(subfigs, benchmarks_results.items()), start=ord("a"))
     for i, (subfig, ((name, _), flop_hostname)) in it:
-
         flops, hostnames = zip(*flop_hostname)
         flops = np.array(flops)
 
@@ -263,7 +284,9 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
                 f"  - Number of outliner removed (<{min_thr:.1f}, >={max_thr:.1f}) {len(hostname_outliners)}"
             )
 
-        flops_scaled_shrank = flops_scaled[(flops_scaled > min_thr) & (flops_scaled <= max_thr)]
+        flops_scaled_shrank = flops_scaled[
+            (flops_scaled > min_thr) & (flops_scaled <= max_thr)
+        ]
         plot_subfigs(flops_scaled_shrank, name, unit, subfig, i, num_plots, clustering)
 
     if remove_low_performing_nodes:
@@ -273,7 +296,9 @@ def plot(output_name, benchmarks_results, remove_low_performing_nodes=False, clu
             for hostname in hostnames:
                 hostname_failures[hostname].append(name)
         # Now count oh many keys
-        exclusif_count_per_types = Counter(tuple(v) for (k, v) in hostname_failures.items())
+        exclusif_count_per_types = Counter(
+            tuple(v) for (k, v) in hostname_failures.items()
+        )
         print("Hostname Outliner Removed Exclusif per Failure Group:")
 
         pprint.pprint(exclusif_count_per_types)
@@ -286,11 +311,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-f", "--file", type=str, help="Path to the input file")
-    group.add_argument("-d", "--directory", type=Path, help="Path to the directory with input files")
+    group.add_argument(
+        "-d", "--directory", type=Path, help="Path to the directory with input files"
+    )
     parser.add_argument("-o", "--output", type=Path, help="Path to the output file")
 
     parser.add_argument(
-        "--no-post-process", action="store_true", help="No outliner removal, no clustering"
+        "--no-post-process",
+        action="store_true",
+        help="No outliner removal, no clustering",
     )
 
     args = parser.parse_args()

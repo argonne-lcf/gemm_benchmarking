@@ -40,15 +40,6 @@ name_remap = {
 }
 
 
-# Regex to merged them
-def extract_groups(pattern, string):
-    m = re.findall(pattern, string)[0]
-    if not (isinstance(m, tuple)):
-        return m
-
-    return "_".join(m)
-
-
 def outline_thr(x):
     sample_size = len(x)
     counts, bins = np.histogram(x, bins=int(np.sqrt(sample_size)))
@@ -179,18 +170,34 @@ def parse_file_our_format(file_path) -> Iterable:
         for line in f:
             # 19787.7,GFlop/s,gpu0,x4102c5s5b0n0
             measurement, unit, device_id, hostname = line.strip().split(",")
-            yield ((f"{device_id}_{gemm_type}", unit), (float(measurement), hostname))
+
+            measurement = float(measurement)
+            if unit == "GFlop/s" and device_id.startswith("gpu"):
+                unit = "TFLOP/s"
+                measurement /= 1e3
+
+            if device_id.startswith("gpu"):
+                gemm_type_ = f"gpu_{gemm_type}"
+            elif device_id.startswith("cpu"):
+                gemm_type_ = f"cpu_{gemm_type}"
+            else:
+                raise (f"Fail to parse #{line}")
+            yield ((gemm_type_, unit), (float(measurement), hostname))
 
 
 def parse_file_reframe(file_path):
-    with path.open() as f:
+    with file_path.open() as f:
         for line in f:
             # Skip first line
             if "stagedir" in line:
                 continue
-            token = line.split("|")
-            # ...|gpu5t1_2D=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
-            k, v = token[-3].split("=")
+            token = line.strip().split("|")
+            # ...|cpu1_IGEMM=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
+            k, measurement = token[-3].split("=")
+
+            device_id, gemm_type = k.split("_")
+            measurement = float(measurement)
+
             unit = token[-1]
 
             # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
@@ -200,12 +207,24 @@ def parse_file_reframe(file_path):
                     raise ("Multiple hostname not supported")
             else:
                 hostname = "unknown"
-            if unit.strip() == "GFLOPS":
-                unit = "Gflop/s"
-        yield ((k, unit), (float(v), hostname))
+
+            if unit == "GFLOPS" and device_id.startswith("gpu"):
+                unit = "TFLOP/s"
+                measurement /= 1e3
+
+            if device_id.startswith("gpu"):
+                gemm_type_ = f"gpu_{gemm_type}"
+            elif device_id.startswith("cpu"):
+                gemm_type_ = f"cpu_{gemm_type}"
+            else:
+                raise (f"Fail to parse #{line}")
+
+            yield ((gemm_type_, unit), (measurement, hostname))
 
 
-def parse(path, use_directory):
+def parse(
+    path, use_directory
+):  # -> Return Dict [ name_test, unit ] = [ [float, hostname],  ]  :
     benchmarks_tests_results = defaultdict(list)
     if use_directory:
         for file_path in sorted(path.glob("*.txt")):
@@ -216,28 +235,6 @@ def parse(path, use_directory):
             benchmarks_tests_results[k].append(v)
 
     return benchmarks_tests_results
-
-
-def aggreg(benchmarks_tests_results):
-    benchmarks_results = defaultdict(list)
-    for (k, u), v in benchmarks_tests_results.items():
-        # x4601c1s4b0n0_00000000-0000-0000-0000-000000000all_XeWrite
-        if k.startswith("x"):
-            group = ".*_(.*)"
-        # gpu5t0_IGEMM or gpu5_IGEMM
-        else:
-            group = "(.*?)\d+(?:t\d+)?_(.*)"
-
-        benchmarks_results[(extract_groups(group, k), u.strip())] += v
-
-    return benchmarks_results
-
-
-def units_normalization(name, x):
-    if name.startswith("CPU"):
-        return (name, x)
-
-    return ("TFLOP/s", x / 1e3)
 
 
 def plot(
@@ -252,28 +249,25 @@ def plot(
 
     subfigs_initial = fig.subfigures(nrows=num_plots, ncols=1)
     if not isinstance(subfigs_initial, Iterable):
-        subfigs = np.array([subfigs_i])
+        subfigs = np.array([subfigs_initial])
     else:
         subfigs = subfigs_initial
-
-    subfigs = fig.subfigures(nrows=num_plots, ncols=1)
 
     tests_failure = {}
 
     it = zip(string.ascii_lowercase, subfigs, benchmarks_results.items())
-    for label, subfig, ((name, _), flop_hostname) in it:
+    for label, subfig, ((name, unit), flop_hostname) in it:
         flops, hostnames = zip(*flop_hostname)
         flops = np.array(flops)
 
-        unit, flops_scaled = units_normalization(name, flops)
         print(f"{name} ({unit})")
 
         min_thr, max_thr = 0, np.inf
         if remove_low_performing_nodes:
-            min_thr, max_thr = outline_thr(flops_scaled)
+            min_thr, max_thr = outline_thr(flops)
             hostname_outliners = set(
                 hostname
-                for value, hostname in zip(flops_scaled, hostnames)
+                for value, hostname in zip(flops, hostnames)
                 if not (min_thr <= value < max_thr)
             )
             tests_failure[name] = hostname_outliners
@@ -281,10 +275,8 @@ def plot(
                 f"  - Number of outliner removed (<{min_thr:.1f}, >={max_thr:.1f}) {len(hostname_outliners)}"
             )
 
-        flops_scaled_shrank = flops_scaled[
-            (flops_scaled > min_thr) & (flops_scaled <= max_thr)
-        ]
-        plot_subfigs(flops_scaled_shrank, name, unit, subfig, label, clustering)
+        flops_shrank = flops[(flops > min_thr) & (flops <= max_thr)]
+        plot_subfigs(flops_shrank, name, unit, subfig, label, clustering)
 
     if remove_low_performing_nodes:
         # Create unique keys
@@ -307,7 +299,7 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-f", "--file", type=str, help="Path to the input file")
+    group.add_argument("-f", "--file", type=Path, help="Path to the input file")
     group.add_argument(
         "-d", "--directory", type=Path, help="Path to the directory with input files"
     )
@@ -338,5 +330,4 @@ if __name__ == "__main__":
     print(f"Graph will be saved in `{output_name}`")
 
     d = parse(path, use_directory)
-    d_aggreg_np = aggreg(d)
-    plot(output_name, d_aggreg_np, remove_low_performing_nodes, clustering)
+    plot(output_name, d, remove_low_performing_nodes, clustering)

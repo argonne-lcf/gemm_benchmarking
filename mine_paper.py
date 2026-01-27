@@ -108,10 +108,7 @@ def plot_hist_with_clustering(ax, data, n):
         add_gaussian(ax, subset, counts, bins)
 
 
-#        ss.probplot(subset, dist="norm", plot=ax[2])
-
-
-def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=False):
+def plot_subfigs(benchmark_array, name, u, subfig, label, clustering=False):
     q1 = np.quantile(benchmark_array, 0.25)
     q3 = np.quantile(benchmark_array, 0.75)
     q2 = np.quantile(benchmark_array, 0.5)
@@ -168,15 +165,15 @@ def plot_subfigs(benchmark_array, name, u, subfig, num=0, offset=0, clustering=F
         )
     else:
         axs[0].set_title("Histogram", fontsize=18)
-    add_box_letter(axs[0], chr(num) + ")")
+    add_box_letter(axs[0], f"{label}-h)")
 
     axs[1].boxplot(benchmark_array)
     axs[1].set_title(f"Boxplot (IQR/median: {percent_between_q3_q1:.2%})", fontsize=18)
     axs[1].set_ylabel(u, fontsize=18)
-    add_box_letter(axs[1], chr(num + offset) + ")")
+    add_box_letter(axs[1], f"{label}-b)")
 
 
-def parse_file_our_format(file_path):
+def parse_file_our_format(file_path) -> Iterable:
     gemm_type = file_path.stem.split(".")[0]
     with file_path.open() as f:
         for line in f:
@@ -215,7 +212,7 @@ def parse(path, use_directory):
             for k, v in parse_file_our_format(file_path):
                 benchmarks_tests_results[k].append(v)
     else:
-        for k, v in parse_file_reframe(file_path):
+        for k, v in parse_file_reframe(path):
             benchmarks_tests_results[k].append(v)
 
     return benchmarks_tests_results
@@ -236,7 +233,7 @@ def aggreg(benchmarks_tests_results):
     return benchmarks_results
 
 
-def scale(name, x):
+def units_normalization(name, x):
     if name.startswith("CPU"):
         return (name, x)
 
@@ -263,12 +260,12 @@ def plot(
 
     tests_failure = {}
 
-    it = enumerate(zip(subfigs, benchmarks_results.items()), start=ord("a"))
-    for i, (subfig, ((name, _), flop_hostname)) in it:
+    it = zip(string.ascii_lowercase, subfigs, benchmarks_results.items())
+    for label, subfig, ((name, _), flop_hostname) in it:
         flops, hostnames = zip(*flop_hostname)
         flops = np.array(flops)
 
-        unit, flops_scaled = scale(name, flops)
+        unit, flops_scaled = units_normalization(name, flops)
         print(f"{name} ({unit})")
 
         min_thr, max_thr = 0, np.inf
@@ -287,7 +284,7 @@ def plot(
         flops_scaled_shrank = flops_scaled[
             (flops_scaled > min_thr) & (flops_scaled <= max_thr)
         ]
-        plot_subfigs(flops_scaled_shrank, name, unit, subfig, i, num_plots, clustering)
+        plot_subfigs(flops_scaled_shrank, name, unit, subfig, label, clustering)
 
     if remove_low_performing_nodes:
         # Create unique keys
@@ -322,8 +319,13 @@ if __name__ == "__main__":
         help="No outliner removal, no clustering",
     )
 
+    parser.add_argument(
+        "--print-outliner",
+        action="store_true",
+        help="No outliner removal, no clustering",
+    )
+
     args = parser.parse_args()
-    print(args)
 
     path = args.directory if args.directory else args.file
     use_directory = True if args.directory else False
@@ -332,8 +334,8 @@ if __name__ == "__main__":
     if args.no_post_process == True:
         remove_low_performing_nodes, clustering = False, False
 
-    output_name = args.output if args.output else Path(path).stem + ".png"
-    print(output_name)
+    output_name = args.output if args.output else path.stem + ".png"
+    print(f"Graph will be saved in `{output_name}`")
 
     d = parse(path, use_directory)
     d_aggreg_np = aggreg(d)

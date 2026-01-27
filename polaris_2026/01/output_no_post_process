@@ -1,0 +1,42 @@
+Namespace(file=None, directory=PosixPath('data_400_nodes'), output=None, no_post_process=True)
+data_400_nodes.png
+gpu_DGEMM (TFLOP/s)
+   -Min 18.5
+   -Q1 19.0
+   -Median 19.1
+   -Q3 19.2
+   -Max 19.3
+   -Sample Size 1600
+   -(Q3-Q1)/median 0.94%
+gpu_HGEMM-FP16 (TFLOP/s)
+   -Min 299.8
+   -Q1 302.8
+   -Median 303.3
+   -Q3 303.9
+   -Max 304.7
+   -Sample Size 1600
+   -(Q3-Q1)/median 0.38%
+gpu_IGEMM (TFLOP/s)
+   -Min 395.3
+   -Q1 409.9
+   -Median 414.8
+   -Q3 418.6
+   -Max 428.5
+   -Sample Size 1600
+   -(Q3-Q1)/median 2.10%
+gpu_SGEMM-FP32 (TFLOP/s)
+   -Min 18.9
+   -Q1 19.1
+   -Median 19.1
+   -Q3 19.1
+   -Max 19.1
+   -Sample Size 1600
+   -(Q3-Q1)/median 0.21%
+gpu_SGEMM-TF32 (TFLOP/s)
+   -Min 124.4
+   -Q1 129.0
+   -Median 129.8
+   -Q3 130.7
+   -Max 134.3
+   -Sample Size 1600
+   -(Q3-Q1)/median 1.29%

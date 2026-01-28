@@ -190,41 +190,58 @@ def parse_file_our_format(file_path) -> Iterable:
 
 
 def parse_file_reframe(file_path):
+    # check first line to determine where we are
     with file_path.open() as f:
-        for line in f:
-            # Skip first line
-            if "stagedir" in line:
-                continue
-            token = line.strip().split("|")
-            # ...|cpu1_IGEMM=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
-            k, measurement = token[-3].split("=")
-
-            device_id, gemm_type = k.split("_")
-            measurement = float(measurement)
-
-            unit = token[-1]
-
-            # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
-            if "$nodes" in token[3]:
-                hostname = token[3].split()[1].split("=")[1]
-                if "," in hostname:
-                    raise ("Multiple hostname not supported")
-            else:
-                hostname = "unknown"
-
-            if unit == "GFLOPS" and device_id.startswith("gpu"):
-                unit = "TFLOP/s"
-                measurement /= 1e3
-
-            if device_id.startswith("gpu"):
-                gemm_type_ = f"gpu_{gemm_type}"
-            elif device_id.startswith("cpu"):
-                gemm_type_ = f"cpu_{gemm_type}"
-            else:
-                raise (f"Fail to parse #{line}")
-
-            yield ((gemm_type_, unit), (measurement, hostname))
-
+         first_line = f.readline()
+         if "|" in first_line:
+             reframe = True
+         else:
+             reframe = False
+    f.close()
+    if reframe:
+        with file_path.open() as f:
+            for line in f:
+                # Skip first line
+                if "stagedir" in line:
+                    continue
+                token = line.strip().split("|")
+                # ...|cpu1_IGEMM=2954.48|ref=3000 (l=-0.1, u=null)|GFLOPS
+                k, measurement = token[-3].split("=")
+    
+                device_id, gemm_type = k.split("_")
+                measurement = float(measurement)
+    
+                unit = token[-1]
+    
+                # |FFTTest %$nodes=x4118c7s5b0n0 /4ad10f8c @aurora:compute+PrgEnv-intel
+                if "$nodes" in token[3]:
+                    hostname = token[3].split()[1].split("=")[1]
+                    if "," in hostname:
+                        raise ("Multiple hostname not supported")
+                else:
+                    hostname = "unknown"
+    
+                if unit == "GFLOPS":
+                    if device_id.startswith("gpu"):
+                        unit = "TFLOP/s"
+                        measurement /= 1e3
+                    else:
+                        unit = "GFLOP/s"
+    
+                if device_id.startswith("gpu"):
+                    gemm_type_ = f"gpu_{gemm_type}"
+                elif device_id.startswith("cpu"):
+                    gemm_type_ = f"cpu_{gemm_type}"
+                else:
+                    raise (f"Fail to parse #{line}")
+    
+                yield ((gemm_type_, unit), (measurement, hostname))
+    else:
+        with file_path.open() as f:
+            for line in f:
+                gemm_type_,measurement,unit,device_id,hostname = line.strip().split(",")
+                yield ((gemm_type_, unit), (float(measurement), hostname))
+            
 
 # Ugly, they are numpy array in reality.
 # put we need to append, so we append into list and then convert...
@@ -339,9 +356,9 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--print-outlier",
+        "--output-file-with-outliers-removed",
         action="store_true",
-        help="No outlier removal, no clustering",
+        help="Prints out the post-processed data (i.e. with outliers removed) in the gemm_save format",
     )
 
     args = parser.parse_args()
@@ -349,6 +366,8 @@ if __name__ == "__main__":
     path = args.directory if args.directory else args.file
     use_directory = True if args.directory else False
 
+# TODO: error out or handle if args.output_file_with_outliers_removed and args.no_post_process are both true
+    
     output_name = args.output if args.output else path.stem + ".png"
     print(f"Graph will be saved in `{output_name}`")
 
@@ -357,4 +376,11 @@ if __name__ == "__main__":
         d = remove_outlier(d)
     print("# Plots and Statistics")
 
-    plot(output_name, d, args.no_post_process)
+    if not args.no_post_process and args.output_file_with_outliers_removed:
+        with open(f'{path.parent}/{path.stem}.processed.log', 'w') as file:
+            for (key,value) in d.items():
+                point = value
+                for flop, hostname in zip(point.flops, point.hostnames):
+                    file.write(f'{key[0]},{flop},{key[1]},{key[0].split("_")[0]+"0"},{hostname}\n')
+    
+    plot(output_name, d, not args.no_post_process)

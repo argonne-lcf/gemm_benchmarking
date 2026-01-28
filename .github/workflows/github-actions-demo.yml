@@ -26,13 +26,14 @@ jobs:
         pip install uv
         uv venv
         source .venv/bin/activate
+        uv sync
 
     - name: Run on aurora_2026/01/run2/
       # Executes your Python script
-      run: uv run python mine_paper.py -d aurora_2026/01/run2/data
+      run: python mine_paper.py -d aurora_2026/01/run2/data
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log
-      run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log
+      run: python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log
 
     - name: Run on polaris_2026/01/data_400_nodes
-      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes
+      run: python mine_paper.py -d polaris_2026/01/data_400_nodes

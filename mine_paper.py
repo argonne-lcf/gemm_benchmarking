@@ -283,17 +283,16 @@ def remove_outlier(d):
         )
         count = outlier_hostnames.size
 
-        if count > 0:
-            tests_failure[name].update(outlier_hostnames)
-            count = outlier_hostnames.size
-            print(f"  - {name}: {count} ∉ [{min_thr:.1f}, {max_thr:.1f}) {unit}")
+        tests_failure[name].update(outlier_hostnames)
+        count = outlier_hostnames.size
+        print(f"  - {name}: {count} ∉ [{min_thr:.1f}, {max_thr:.1f}) {unit}")
 
     # Create unique keys
     hostname_failures = defaultdict(list)
     for name, hostnames in tests_failure.items():
         for hostname in hostnames:
             hostname_failures[hostname].append(name)
-    # Now count oh many keys
+    # Now count how many keys
     exclusif_count_per_types = Counter(tuple(v) for v in hostname_failures.values())
     print("## Hostname Outliner Removed Exclusif per Failure Group:")
     pprint.pprint(exclusif_count_per_types)

@@ -1,3 +1,4 @@
+[![Run mine_paper.py](https://github.com/argonne-lcf/gemm_benchmarking/actions/workflows/github-actions-demo.yml/badge.svg)](https://github.com/argonne-lcf/gemm_benchmarking/actions/workflows/github-actions-demo.yml)
 # gemm_benchmarking oneMKL
 
 ## Compiling:

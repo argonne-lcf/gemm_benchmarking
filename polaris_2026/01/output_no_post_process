@@ -1,4 +1,4 @@
-Graph will be saved in `data.png`
+Graph will be saved in `data_400_nodes.png`
 # Plots and Statistics
 ## gpu_DGEMM (TFLOP/s)
    -Min 18.5

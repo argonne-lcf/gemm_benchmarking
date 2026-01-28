@@ -226,7 +226,8 @@ def parse_file_reframe(file_path):
             yield ((gemm_type_, unit), (measurement, hostname))
 
 
-# Ugly, they are Ndarray in reality...
+# Ugly, they are numpy array in reality.
+# put we need to append, so we append into list and then convert...
 @dataclass
 class Point:
     flops: List[float] = field(default_factory=list)
@@ -244,12 +245,12 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
     else:
         it = parse_file_reframe(path)
 
-    # 2. Collect data (List append is actually optimal for unknown lengths)
+    # 2. Collect data into list (Ugly)
     for k, (measurement, hostname) in it:
         benchmarks_tests_results[k].flops.append(measurement)
         benchmarks_tests_results[k].hostnames.append(hostname)
 
-    # 3. Batch convert to numpy one
+    # 3. Convert to Numpy
     for v in benchmarks_tests_results.values():
         v.flops = np.array(v.flops, dtype=float)
         v.hostnames = np.array(v.hostnames, dtype=object)

@@ -33,3 +33,6 @@ jobs:
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log
       run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log
+
+    - name: Run on polaris_2026/01/data_400_nodes
+      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes

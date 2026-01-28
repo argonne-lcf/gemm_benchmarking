@@ -47,4 +47,4 @@ jobs:
       run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process > output
 
     - name: Check if polaris_2026/01/data_400_nodes without post-process output matches
-      run: diff output polaris_2026/01/data_400_nodes/output_no_post_process
+      run: diff output polaris_2026/01/output_no_post_process

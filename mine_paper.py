@@ -259,7 +259,7 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
 
 
 def remove_outlier(d):
-    print("# Removing Outliners")
+    print("# Removing Outliers")
     benchmarks_tests_results = defaultdict(Point)
     tests_failure = defaultdict(set)
 
@@ -294,7 +294,7 @@ def remove_outlier(d):
             hostname_failures[hostname].append(name)
     # Now count how many keys
     exclusif_count_per_types = Counter(tuple(v) for v in hostname_failures.values())
-    print("## Hostname Outliner Removed Exclusif per Failure Group:")
+    print("## Hostname Outlier Removed Exclusive per Failure Group:")
     pprint.pprint(exclusif_count_per_types)
 
     return benchmarks_tests_results
@@ -355,6 +355,6 @@ if __name__ == "__main__":
     d = parse(path, use_directory)
     if not args.no_post_process:
         d = remove_outlier(d)
-    print("# Plot and Statistic")
+    print("# Plots and Statistics")
 
     plot(output_name, d, args.no_post_process)

@@ -10,6 +10,10 @@ from pathlib import Path
 import string
 import pprint
 from sklearn.cluster import KMeans
+from dataclasses import dataclass, field
+from collections import defaultdict
+from typing import List
+from itertools import chain
 
 CLUSTER_NUMBER = SOW_target = {
     "cpu_DGEMM": 1,
@@ -222,24 +226,81 @@ def parse_file_reframe(file_path):
             yield ((gemm_type_, unit), (measurement, hostname))
 
 
-def parse(
-    path, use_directory
-):  # -> Return Dict [ name_test, unit ] = [ [float, hostname],  ]  :
-    benchmarks_tests_results = defaultdict(list)
+# Ugly, they are Ndarray in reality...
+@dataclass
+class Point:
+    flops: List[float] = field(default_factory=list)
+    hostnames: List = field(default_factory=list)
+
+
+def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
+    benchmarks_tests_results = defaultdict(Point)
+
+    # 1. Iterator for all type
     if use_directory:
-        for file_path in sorted(path.glob("*.txt")):
-            for k, v in parse_file_our_format(file_path):
-                benchmarks_tests_results[k].append(v)
+        # 1. Map the parser to the files
+        # 2. Chain flattens the resulting iterators into one stream
+        it = chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt"))))
     else:
-        for k, v in parse_file_reframe(path):
-            benchmarks_tests_results[k].append(v)
+        it = parse_file_reframe(path)
+
+    # 2. Collect data (List append is actually optimal for unknown lengths)
+    for k, (measurement, hostname) in it:
+        benchmarks_tests_results[k].flops.append(measurement)
+        benchmarks_tests_results[k].hostnames.append(hostname)
+
+    # 3. Batch convert to numpy one
+    for v in benchmarks_tests_results.values():
+        v.flops = np.array(v.flops, dtype=float)
+        v.hostnames = np.array(v.hostnames, dtype=object)
 
     return benchmarks_tests_results
 
 
-def plot(
-    output_name, benchmarks_results, remove_low_performing_nodes=False, clustering=False
-):
+def remove_outlier(d):
+    print("# Removing Outliners")
+    benchmarks_tests_results = defaultdict(Point)
+    tests_failure = defaultdict(set)
+
+    for k, point in d.items():
+        name, unit = k
+        min_thr, max_thr = outline_thr(point.flops)
+
+        # 1. Create a boolean mask
+        mask = (point.flops >= min_thr) & (point.flops < max_thr)
+
+        # 2. Apply mask to both arrays
+        valid_flops = point.flops[mask]
+        valid_hostnames = point.hostnames[mask]
+
+        # 3. Identify outliers using the inverse mask (~)
+        outlier_hostnames = point.hostnames[~mask]
+
+        # Store results
+        benchmarks_tests_results[k] = Point(
+            flops=valid_flops, hostnames=valid_hostnames
+        )
+        count = outlier_hostnames.size
+
+        if count > 0:
+            tests_failure[name].update(outlier_hostnames)
+            count = outlier_hostnames.size
+            print(f"  - {name}: {count} ∉ [{min_thr:.1f}, {max_thr:.1f}) {unit}")
+
+    # Create unique keys
+    hostname_failures = defaultdict(list)
+    for name, hostnames in tests_failure.items():
+        for hostname in hostnames:
+            hostname_failures[hostname].append(name)
+    # Now count oh many keys
+    exclusif_count_per_types = Counter(tuple(v) for v in hostname_failures.values())
+    print("## Hostname Outliner Removed Exclusif per Failure Group:")
+    pprint.pprint(exclusif_count_per_types)
+
+    return benchmarks_tests_results
+
+
+def plot(output_name, benchmarks_results, clustering=False):
     num_plots = len(benchmarks_results)
 
     plt.rc("xtick", labelsize=18)
@@ -253,44 +314,10 @@ def plot(
     else:
         subfigs = subfigs_initial
 
-    tests_failure = {}
-
     it = zip(string.ascii_lowercase, subfigs, benchmarks_results.items())
-    for label, subfig, ((name, unit), flop_hostname) in it:
-        flops, hostnames = zip(*flop_hostname)
-        flops = np.array(flops)
-
-        print(f"{name} ({unit})")
-
-        min_thr, max_thr = 0, np.inf
-        if remove_low_performing_nodes:
-            min_thr, max_thr = outline_thr(flops)
-            hostname_outliners = set(
-                hostname
-                for value, hostname in zip(flops, hostnames)
-                if not (min_thr <= value < max_thr)
-            )
-            tests_failure[name] = hostname_outliners
-            print(
-                f"  - Number of outliner removed (<{min_thr:.1f}, >={max_thr:.1f}) {len(hostname_outliners)}"
-            )
-
-        flops_shrank = flops[(flops > min_thr) & (flops <= max_thr)]
-        plot_subfigs(flops_shrank, name, unit, subfig, label, clustering)
-
-    if remove_low_performing_nodes:
-        # Create unique keys
-        hostname_failures = defaultdict(list)
-        for name, hostnames in tests_failure.items():
-            for hostname in hostnames:
-                hostname_failures[hostname].append(name)
-        # Now count oh many keys
-        exclusif_count_per_types = Counter(
-            tuple(v) for (k, v) in hostname_failures.items()
-        )
-        print("Hostname Outliner Removed Exclusif per Failure Group:")
-
-        pprint.pprint(exclusif_count_per_types)
+    for label, subfig, ((name, unit), v) in it:
+        print(f"## {name} ({unit})")
+        plot_subfigs(v.flops, name, unit, subfig, label, clustering)
     plt.savefig(output_name)
 
 
@@ -308,13 +335,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--no-post-process",
         action="store_true",
-        help="No outliner removal, no clustering",
+        help="No outlier removal, no clustering",
     )
 
     parser.add_argument(
-        "--print-outliner",
+        "--print-outlier",
         action="store_true",
-        help="No outliner removal, no clustering",
+        help="No outlier removal, no clustering",
     )
 
     args = parser.parse_args()
@@ -322,12 +349,12 @@ if __name__ == "__main__":
     path = args.directory if args.directory else args.file
     use_directory = True if args.directory else False
 
-    remove_low_performing_nodes, clustering = True, True
-    if args.no_post_process == True:
-        remove_low_performing_nodes, clustering = False, False
-
     output_name = args.output if args.output else path.stem + ".png"
     print(f"Graph will be saved in `{output_name}`")
 
     d = parse(path, use_directory)
-    plot(output_name, d, remove_low_performing_nodes, clustering)
+    if args.no_post_process:
+        d = remove_outlier(d)
+    print("# Plot and Statistic")
+
+    plot(output_name, d, args.no_post_process)

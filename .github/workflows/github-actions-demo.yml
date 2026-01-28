@@ -27,12 +27,24 @@ jobs:
         uv venv
         source .venv/bin/activate
 
-    - name: Run on aurora_2026/01/run2/
+    - name: Run on aurora_2026/01/run2/ with post-process
       # Executes your Python script
       run: uv run python mine_paper.py -d aurora_2026/01/run2/data
+
+    - name: Run on aurora_2026/01/run2/ without post-process and save output
+      run: uv run python mine_paper.py -d aurora_2026/01/run2/data --no-post-process > output
+
+    - name: Check if aurora_2026/01/run2/ without post-process output matches
+      run: diff output aurora_2026/01/run2/output_no_post_process
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log
       run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log
 
-    - name: Run on polaris_2026/01/data_400_nodes
+    - name: Run on polaris_2026/01/data_400_nodes with post-process
       run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes
+
+    - name: Run on polaris_2026/01/data_400_nodes without post-process and save output
+      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process > output
+
+    - name: Check if polaris_2026/01/data_400_nodes without post-process output matches
+      run: diff output polaris_2026/01/data_400_nodes/output_no_post_process

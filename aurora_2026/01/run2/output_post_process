@@ -1,6 +1,6 @@
-Namespace(file=None, directory='data', output=None, no_post_process=False)
-data.png
-gpu_DGEMM (TFLOP/s)
+Graph will be saved in `data.png`
+# Plots and Statistics
+## gpu_DGEMM (TFLOP/s)
   - Number of outliner removed (<19.1, >=20.9) 24
    -Min 19.1
    -Q1 19.9
@@ -10,7 +10,7 @@ gpu_DGEMM (TFLOP/s)
    -Sample Size 49127
    -(Q3-Q1)/median 1.51%
    -Gaussian RMSE 22
-gpu_HGEMM-BF16 (TFLOP/s)
+## gpu_HGEMM-BF16 (TFLOP/s)
   - Number of outliner removed (<374.1, >=438.8) 13
    -Min 374.5
    -Q1 404.9
@@ -20,7 +20,7 @@ gpu_HGEMM-BF16 (TFLOP/s)
    -Sample Size 49139
    -(Q3-Q1)/median 2.75%
    -Gaussian RMSE 21
-gpu_HGEMM-FP16 (TFLOP/s)
+## gpu_HGEMM-FP16 (TFLOP/s)
   - Number of outliner removed (<390.6, >=449.7) 45
    -Min 390.6
    -Q1 416.1
@@ -34,7 +34,7 @@ gpu_HGEMM-FP16 (TFLOP/s)
    -Gaussian RMSE 44
    -Gaussian RMSE 16
    -Gaussian RMSE 63
-gpu_IGEMM (TFLOP/s)
+## gpu_IGEMM (TFLOP/s)
   - Number of outliner removed (<764.6, >=899.2) 15
    -Min 764.7
    -Q1 830.0
@@ -44,7 +44,7 @@ gpu_IGEMM (TFLOP/s)
    -Sample Size 49137
    -(Q3-Q1)/median 2.73%
    -Gaussian RMSE 44
-gpu_SGEMM-FP32 (TFLOP/s)
+## gpu_SGEMM-FP32 (TFLOP/s)
   - Number of outliner removed (<42.8, >=42.9) 14
    -Min 42.8
    -Q1 42.8
@@ -56,7 +56,7 @@ gpu_SGEMM-FP32 (TFLOP/s)
    -Gaussian RMSE 122
    -Gaussian RMSE 83
    -Gaussian RMSE 122
-gpu_SGEMM-TF32 (TFLOP/s)
+## gpu_SGEMM-TF32 (TFLOP/s)
   - Number of outliner removed (<189.2, >=222.0) 29
    -Min 189.3
    -Q1 204.3

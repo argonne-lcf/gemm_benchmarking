@@ -1,6 +1,6 @@
-Namespace(file=None, directory='data', output=None, no_post_process=True)
-data.png
-gpu_DGEMM (TFLOP/s)
+Graph will be saved in `data.png`
+# Plots and Statistics
+## gpu_DGEMM (TFLOP/s)
    -Min 18.5
    -Q1 19.9
    -Median 20.0
@@ -8,7 +8,7 @@ gpu_DGEMM (TFLOP/s)
    -Max 21.2
    -Sample Size 49152
    -(Q3-Q1)/median 1.51%
-gpu_HGEMM-BF16 (TFLOP/s)
+## gpu_HGEMM-BF16 (TFLOP/s)
    -Min 361.6
    -Q1 404.9
    -Median 410.6
@@ -16,7 +16,7 @@ gpu_HGEMM-BF16 (TFLOP/s)
    -Max 442.9
    -Sample Size 49152
    -(Q3-Q1)/median 2.75%
-gpu_HGEMM-FP16 (TFLOP/s)
+## gpu_HGEMM-FP16 (TFLOP/s)
    -Min 381.4
    -Q1 416.1
    -Median 419.6
@@ -24,7 +24,7 @@ gpu_HGEMM-FP16 (TFLOP/s)
    -Max 483.4
    -Sample Size 49152
    -(Q3-Q1)/median 2.35%
-gpu_IGEMM (TFLOP/s)
+## gpu_IGEMM (TFLOP/s)
    -Min 719.8
    -Q1 830.0
    -Median 842.4
@@ -32,7 +32,7 @@ gpu_IGEMM (TFLOP/s)
    -Max 906.8
    -Sample Size 49152
    -(Q3-Q1)/median 2.73%
-gpu_SGEMM-FP32 (TFLOP/s)
+## gpu_SGEMM-FP32 (TFLOP/s)
    -Min 42.8
    -Q1 42.8
    -Median 42.8
@@ -40,7 +40,7 @@ gpu_SGEMM-FP32 (TFLOP/s)
    -Max 45.7
    -Sample Size 49152
    -(Q3-Q1)/median 0.02%
-gpu_SGEMM-TF32 (TFLOP/s)
+## gpu_SGEMM-TF32 (TFLOP/s)
    -Min 164.3
    -Q1 204.3
    -Median 207.6

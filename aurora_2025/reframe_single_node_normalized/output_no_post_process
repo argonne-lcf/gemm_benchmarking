@@ -1,0 +1,90 @@
+Graph will be saved in `normal.smaller.png`
+# Plots and Statistics
+## cpu_DGEMM (GFLOP/s)
+   -Min 0.8
+   -Q1 0.9
+   -Median 0.9
+   -Q3 0.9
+   -Max 1.0
+   -Sample Size 7072
+   -(Q3-Q1)/median 2.85%
+## cpu_SGEMM-FP32 (GFLOP/s)
+   -Min 0.9
+   -Q1 1.0
+   -Median 1.0
+   -Q3 1.0
+   -Max 1.0
+   -Sample Size 7072
+   -(Q3-Q1)/median 2.23%
+## cpu_HGEMM-FP16 (GFLOP/s)
+   -Min 0.7
+   -Q1 0.8
+   -Median 0.9
+   -Q3 0.9
+   -Max 1.0
+   -Sample Size 7072
+   -(Q3-Q1)/median 12.58%
+## cpu_HGEMM-BF16 (GFLOP/s)
+   -Min 0.7
+   -Q1 0.9
+   -Median 1.0
+   -Q3 1.0
+   -Max 1.0
+   -Sample Size 7072
+   -(Q3-Q1)/median 1.87%
+## cpu_IGEMM (GFLOP/s)
+   -Min 0.7
+   -Q1 0.9
+   -Median 0.9
+   -Q3 1.0
+   -Max 1.0
+   -Sample Size 7072
+   -(Q3-Q1)/median 2.22%
+## gpu_DGEMM (TFLOP/s)
+   -Min 0.0
+   -Q1 0.0
+   -Median 0.0
+   -Q3 0.0
+   -Max 0.0
+   -Sample Size 21216
+   -(Q3-Q1)/median 1.47%
+## gpu_SGEMM-FP32 (TFLOP/s)
+   -Min 0.0
+   -Q1 0.0
+   -Median 0.0
+   -Q3 0.0
+   -Max 0.0
+   -Sample Size 21216
+   -(Q3-Q1)/median 3.00%
+## gpu_SGEMM-TF32 (TFLOP/s)
+   -Min 0.0
+   -Q1 0.0
+   -Median 0.0
+   -Q3 0.0
+   -Max 0.0
+   -Sample Size 21216
+   -(Q3-Q1)/median 1.71%
+## gpu_HGEMM-FP16 (TFLOP/s)
+   -Min 0.0
+   -Q1 0.0
+   -Median 0.0
+   -Q3 0.0
+   -Max 0.0
+   -Sample Size 21216
+   -(Q3-Q1)/median 3.10%
+## gpu_HGEMM-BF16 (TFLOP/s)
+   -Min 0.0
+   -Q1 0.0
+   -Median 0.0
+   -Q3 0.0
+   -Max 0.0
+   -Sample Size 21216
+   -(Q3-Q1)/median 1.83%
+## gpu_IGEMM (TFLOP/s)
+   -Min 0.0
+   -Q1 0.0
+   -Median 0.0
+   -Q3 0.0
+   -Max 0.0
+   -Sample Size 21216
+   -(Q3-Q1)/median 1.72%

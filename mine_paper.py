@@ -353,7 +353,7 @@ if __name__ == "__main__":
     print(f"Graph will be saved in `{output_name}`")
 
     d = parse(path, use_directory)
-    if args.no_post_process:
+    if not args.no_post_process:
         d = remove_outlier(d)
     print("# Plot and Statistic")
 

@@ -23,8 +23,8 @@ jobs:
     - name: Install python dependencies
       run: |
         pip install uv
-	uv venv
-	source .venv/bin/activate
+        uv venv
+        source .venv/bin/activate
 
     - name: Run on aurora_2026/01/run2/
       # Executes your Python script

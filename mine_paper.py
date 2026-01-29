@@ -240,7 +240,14 @@ def parse_file_reframe(file_path):
         with file_path.open() as f:
             for line in f:
                 gemm_type_,measurement,unit,device_id,hostname = line.strip().split(",")
-                yield ((gemm_type_, unit), (float(measurement), hostname))
+                if unit == "GFLOPS" or unit == "GFlop/s":
+                    if device_id.startswith("gpu"):
+                        unit = "TFLOP/s"
+                        measurement = float(measurement)/1e3
+                    else:
+                        unit = "GFLOP/s"
+
+                yield ((gemm_type_, unit), (measurement, hostname))
             
 
 # Ugly, they are numpy array in reality.
@@ -260,7 +267,7 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
         # 2. Chain flattens the resulting iterators into one stream
         it = chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt"))))
     else:
-        it = parse_file_reframe(path)
+        it = sorted(parse_file_reframe(path))
 
     # 2. Collect data into list (Ugly)
     for k, (measurement, hostname) in it:

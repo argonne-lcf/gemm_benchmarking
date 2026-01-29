@@ -48,8 +48,11 @@ jobs:
     - name: Check if aurora_2025/reframe_single_node_normalized/normal.smaller.log without post-process output matches
       run: diff aurora_2025/reframe_single_node_normalized/output_no_post_process output
 
-    - name: Run on polaris_2026/01/data_400_nodes with post-process
-      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes
+    - name: Run on polaris_2026/01/data_400_nodes with post-process and save output
+      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes > output
+
+    - name: Check if polaris_2026/01/data_400_nodes with post-process output matches
+      run: diff output polaris_2026/01/output_post_process
 
     - name: Run on polaris_2026/01/data_400_nodes without post-process and save output
       run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process > output

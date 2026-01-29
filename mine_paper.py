@@ -314,7 +314,7 @@ def remove_outlier(d):
     # Create unique keys
     hostname_failures = defaultdict(list)
     for name, hostnames in tests_failure.items():
-        for hostname in hostnames:
+        for hostname in sorted(hostnames):
             hostname_failures[hostname].append(name)
     # Now count how many keys
     exclusif_count_per_types = Counter(tuple(v) for v in hostname_failures.values())

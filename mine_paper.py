@@ -265,7 +265,7 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
     if use_directory:
         # 1. Map the parser to the files
         # 2. Chain flattens the resulting iterators into one stream
-        it = chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt"))))
+        it = sorted(chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt")))))
     else:
         it = sorted(parse_file_reframe(path))
 

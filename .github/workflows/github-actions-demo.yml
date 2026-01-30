@@ -64,19 +64,19 @@ jobs:
          diff aurora_2025/reframe_single_node_normalized/normal.smaller.processed.processed.log aurora_2025/reframe_single_node_normalized/normal.smaller.processed.log
 
     - name: Run on polaris_2026/01/data_400_nodes with post-process and save output
-      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --output-file-with-outliers-removed  > output
+      run: uv run python mine_paper.py -f polaris_2026/01/new_format.txt --output-file-with-outliers-removed  > output
 
     - name: Check if polaris_2026/01/data_400_nodes with post-process output matches
       run: |
          diff output polaris_2026/01/output_post_process
-         diff polaris_2026/01/data_400_nodes.processed.ref.log polaris_2026/01/data_400_nodes.processed.log
+         diff polaris_2026/01/data_400_nodes.processed.ref.log polaris_2026/01/new_format.processed.log
          
     - name: Run on polaris_2026/01/data_400_nodes without post-process and save output
       run: |
-         uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process --output-file-with-outliers-removed > output
-         uv run python mine_paper.py -f polaris_2026/01/data_400_nodes.processed.log --no-post-process --output-file-with-outliers-removed 
+         uv run python mine_paper.py -f polaris_2026/01/new_format.txt --no-post-process --output-file-with-outliers-removed > output
+         uv run python mine_paper.py -f polaris_2026/01/new_format.processed.log --no-post-process --output-file-with-outliers-removed 
 
     - name: Check if polaris_2026/01/data_400_nodes without post-process output matches
       run: |
          diff output polaris_2026/01/output_no_post_process
-         diff polaris_2026/01/data_400_nodes.processed.log polaris_2026/01/data_400_nodes.processed.processed.log
+         diff polaris_2026/01/new_format.processed.log polaris_2026/01/new_format.processed.processed.log

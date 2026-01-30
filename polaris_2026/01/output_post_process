@@ -1,4 +1,4 @@
-Graph will be saved in `data_400_nodes.png`
+Graph will be saved in `new_format.png`
 # Removing Outliers
   - gpu_DGEMM: 5 ∉ [18.7, 19.3) TFLOP/s
   - gpu_HGEMM-FP16: 18 ∉ [301.1, 304.7) TFLOP/s

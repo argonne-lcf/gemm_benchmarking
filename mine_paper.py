@@ -263,7 +263,6 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
     benchmarks_tests_results = defaultdict(Point)
 
     # 1. Iterator for all type
-    # sorry for the sorting, I know it defeats the purpose of the iterators. I use it to be sure output print can be checked :(
     if use_directory:
         # 1. Map the parser to the files
         # 2. Chain flattens the resulting iterators into one stream

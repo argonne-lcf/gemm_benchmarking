@@ -20,12 +20,8 @@ jobs:
       with:
         python-version: '3.10' 
 
-    - name: Install python dependencies
-      run: |
-        pwd
-        pip install uv
-        uv venv
-        source .venv/bin/activate
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
 
     - name: Run on aurora_2026/01/run2/ with post-process
       run: uv run python mine_paper.py -f aurora_2026/01/run2/new_format.txt --output-file-with-outliers-removed > output

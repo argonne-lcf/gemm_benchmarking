@@ -56,10 +56,10 @@ Counter({('gpu_SGEMM-FP32',): 44,
    -Max 1.0
    -Sample Size 7071
    -(Q3-Q1)/median 12.58%
-   -Gaussian RMSE 16
-   -Gaussian RMSE 12
    -Gaussian RMSE 15
-   -Gaussian RMSE 20
+   -Gaussian RMSE 10
+   -Gaussian RMSE 15
+   -Gaussian RMSE 19
 ## cpu_IGEMM (GFLOP/s)
    -Min 0.8
    -Q1 0.9
@@ -106,9 +106,9 @@ Counter({('gpu_SGEMM-FP32',): 44,
    -(Q3-Q1)/median 3.10%
    -Gaussian RMSE 23
    -Gaussian RMSE 18
-   -Gaussian RMSE 9
    -Gaussian RMSE 18
    -Gaussian RMSE 26
+   -Gaussian RMSE 9
 ## gpu_IGEMM (TFLOP/s)
    -Min 0.0
    -Q1 0.0

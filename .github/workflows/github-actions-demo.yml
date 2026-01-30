@@ -69,7 +69,7 @@ jobs:
     - name: Check if polaris_2026/01/data_400_nodes with post-process output matches
       run: |
          diff output polaris_2026/01/output_post_process
-         diff polaris_2026/01/polaris_2026/01/data_400_nodes.processed.ref.log polaris_2026/01/polaris_2026/01/data_400_nodes.processed.log
+         diff polaris_2026/01/data_400_nodes.processed.ref.log polaris_2026/01/data_400_nodes.processed.log
          
     - name: Run on polaris_2026/01/data_400_nodes without post-process and save output
       run: |

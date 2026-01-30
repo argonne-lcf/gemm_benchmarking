@@ -9,7 +9,6 @@
 #include <random>
 #include <string>
 #include <vector>
-#include <filesystem>
 
 // MPI Header
 #include <mpi.h>
@@ -33,8 +32,9 @@
 #endif
 
 #ifdef SAVE
-// name of created directory for output if SAVE is defined
-std::string directory_name="data";
+// name of created file for output if SAVE is defined
+std::string filename = "data.txt";
+std::ofstream fout(filename.c_str());
 #endif
 
 inline __half operator/(const __half &lhs, int rhs) {
@@ -563,10 +563,9 @@ int run(cublasHandle_t handle, int m, int n, int k, std::string name, std::strin
 	std::vector<int> local_ranks(gather_size);
 	MPI_Gather(node_name,MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names.data(), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, root_rank,MPI_SUB_COMM_GATHER);
 	MPI_Gather(&rank_on_node,1, MPI_INT, local_ranks.data(), 1, MPI_INT, root_rank,MPI_SUB_COMM_GATHER);
-        std::string filename = directory_name+"/"+name + ".txt";
-        std::ofstream fout(filename.c_str());
+
         for (int i=0;i<gather_size;i++)
-          fout << flops[i] << "," << "GFlop/s," << "gpu" << local_ranks[i] / sub_size <<"," << node_names[i].data() << std::endl;
+          fout << bench_type+"_"+name << "," << flops[i] << "," << "GFlop/s," << "gpu" << local_ranks[i] / sub_size <<"," << node_names[i].data() << std::endl;
       }
 #endif
       std::sort(flops.begin(), flops.end());
@@ -625,14 +624,6 @@ int main(int argc, char **argv) {
   std::string bench_type{argv[1]};
 
   int errors = 0;
-
-#ifdef SAVE  
-  // if a third argument is given, the output directory is the name given
-  // otherwise it's "data"
-  if(argc == 3) directory_name = argv[2];
-  if(my_rank == 0) std::filesystem::create_directory(directory_name);
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
   
   CHECK_CUBLAS(cublasSetMathMode(handle, CUBLAS_DEFAULT_MATH));
   errors += run<double, double, double>(handle, 12000, 12000, 12000, "DGEMM", bench_type);

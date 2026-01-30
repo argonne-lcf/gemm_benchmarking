@@ -25,10 +25,10 @@ jobs:
         pwd
         pip install uv
         uv venv
-        source .venv/bin/activate
+        echo "::add-path::.venv/bin"
 
     - name: Run on aurora_2026/01/run2/ with post-process
-      run: uv run python mine_paper.py -f aurora_2026/01/run2/new_format.txt --output-file-with-outliers-removed > output
+      run: python mine_paper.py -f aurora_2026/01/run2/new_format.txt --output-file-with-outliers-removed > output
 
     - name: Check if aurora_2026/01/run2/ with post-process output matches
       run: |

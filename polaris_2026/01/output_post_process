@@ -31,11 +31,11 @@ Counter({('gpu_HGEMM-FP16',): 15,
    -Max 304.5
    -Sample Size 1582
    -(Q3-Q1)/median 0.38%
-   -Gaussian RMSE 26
-   -Gaussian RMSE 7
    -Gaussian RMSE 5
    -Gaussian RMSE 2
-   -Gaussian RMSE 4
+   -Gaussian RMSE 7
+   -Gaussian RMSE 26
+   -Gaussian RMSE 6
 ## gpu_IGEMM (TFLOP/s)
    -Min 395.3
    -Q1 409.9

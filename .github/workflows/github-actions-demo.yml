@@ -74,7 +74,7 @@ jobs:
     - name: Run on polaris_2026/01/data_400_nodes without post-process and save output
       run: |
          uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process --output-file-with-outliers-removed > output
-         uv run python mine_paper.py -d polaris_2026/01/data_400_nodes.processed.log --no-post-process --output-file-with-outliers-removed 
+         uv run python mine_paper.py -f polaris_2026/01/data_400_nodes.processed.log --no-post-process --output-file-with-outliers-removed 
 
     - name: Check if polaris_2026/01/data_400_nodes without post-process output matches
       run: |

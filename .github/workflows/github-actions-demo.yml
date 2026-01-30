@@ -28,14 +28,20 @@ jobs:
         source .venv/bin/activate
 
     - name: Run on aurora_2026/01/run2/ with post-process
-      # Executes your Python script
-      run: uv run python mine_paper.py -f aurora_2026/01/run2/new_format.txt
+      run: uv run python mine_paper.py -f aurora_2026/01/run2/new_format.txt --output-file-with-outliers-removed > output
+
+    - name: Check if aurora_2026/01/run2/ with post-process output matches
+      run: |
+         diff output aurora_2026/01/run2/output_post_process
+         diff aurora_2026/01/run2/new_format.processed.ref.log aurora_2026/01/run2/new_format.processed.log
 
     - name: Run on aurora_2026/01/run2/ without post-process and save output
-      run: uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.txt --no-post-process > output
+      run: uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.txt --no-post-process --output-file-with-outliers-removed > output
 
     - name: Check if aurora_2026/01/run2/ without post-process output matches
-      run: diff output aurora_2026/01/run2/output_no_post_process
+      run: |
+         diff output aurora_2026/01/run2/output_no_post_process
+         diff aurora_2026/01/run2/new_format.txt aurora_2026/01/run2/new_format.processed.log
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log with post-process
       run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log > output

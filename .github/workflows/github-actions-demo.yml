@@ -38,7 +38,7 @@ jobs:
     - name: Run on aurora_2026/01/run2/ without post-process and save output
       run: |
          uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.txt --no-post-process --output-file-with-outliers-removed > output
-	 uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.processed.log --no-post-process --output-file-with-outliers-removed
+         uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.processed.log --no-post-process --output-file-with-outliers-removed
 
     - name: Check if aurora_2026/01/run2/ without post-process output matches
       run: |

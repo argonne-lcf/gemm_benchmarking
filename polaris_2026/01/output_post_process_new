@@ -1,0 +1,67 @@
+Graph will be saved in `data_400_nodes.png`
+# Removing Outliers
+  - gpu_DGEMM: 5 ∉ [18.7, 19.3) TFLOP/s
+  - gpu_HGEMM-FP16: 18 ∉ [301.1, 304.7) TFLOP/s
+  - gpu_IGEMM: 1 ∉ [395.3, 428.5) TFLOP/s
+  - gpu_SGEMM-FP32: 5 ∉ [19.0, 19.1) TFLOP/s
+  - gpu_SGEMM-TF32: 5 ∉ [126.4, 134.3) TFLOP/s
+## Hostname Outlier Removed Exclusive per Failure Group:
+Counter({('gpu_HGEMM-FP16',): 15,
+         ('gpu_DGEMM', 'gpu_SGEMM-TF32'): 3,
+         ('gpu_HGEMM-FP16', 'gpu_SGEMM-FP32'): 3,
+         ('gpu_DGEMM',): 2,
+         ('gpu_SGEMM-FP32',): 2,
+         ('gpu_IGEMM', 'gpu_SGEMM-TF32'): 1,
+         ('gpu_SGEMM-TF32',): 1})
+# Plots and Statistics
+## gpu_DGEMM (TFLOP/s)
+   -Min 18.7
+   -Q1 19.0
+   -Median 19.1
+   -Q3 19.2
+   -Max 19.2
+   -Sample Size 1595
+   -(Q3-Q1)/median 0.94%
+   -Gaussian RMSE 40
+## gpu_HGEMM-FP16 (TFLOP/s)
+   -Min 301.1
+   -Q1 302.8
+   -Median 303.3
+   -Q3 303.9
+   -Max 304.5
+   -Sample Size 1582
+   -(Q3-Q1)/median 0.38%
+   -Gaussian RMSE 5
+   -Gaussian RMSE 2
+   -Gaussian RMSE 7
+   -Gaussian RMSE 26
+   -Gaussian RMSE 6
+## gpu_IGEMM (TFLOP/s)
+   -Min 395.3
+   -Q1 409.9
+   -Median 414.8
+   -Q3 418.6
+   -Max 428.0
+   -Sample Size 1599
+   -(Q3-Q1)/median 2.08%
+   -Gaussian RMSE 29
+## gpu_SGEMM-FP32 (TFLOP/s)
+   -Min 19.0
+   -Q1 19.1
+   -Median 19.1
+   -Q3 19.1
+   -Max 19.1
+   -Sample Size 1595
+   -(Q3-Q1)/median 0.21%
+   -Gaussian RMSE 13
+   -Gaussian RMSE 10
+   -Gaussian RMSE 10
+## gpu_SGEMM-TF32 (TFLOP/s)
+   -Min 126.5
+   -Q1 129.0
+   -Median 129.8
+   -Q3 130.7
+   -Max 134.1
+   -Sample Size 1595
+   -(Q3-Q1)/median 1.28%
+   -Gaussian RMSE 31

@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 from typing import List
 from itertools import chain
+from sklearn.decomposition import PCA
 
 CLUSTER_NUMBER = SOW_target = {
     "cpu_DGEMM": 1,
@@ -87,12 +88,11 @@ def add_gaussian(ax, benchmark_array, counts, bin_edges):
 
 def plot_hist_with_clustering(ax, data, n):
     # determine which K-Means cluster each point belongs to
-    cluster_id = KMeans(n, random_state=0).fit_predict(data.reshape(-1, 1))
+    cluster_id = KMeans(n, random_state=0, n_init=100).fit_predict(data.reshape(-1, 1))
 
     # determine densities by cluster assignment and plot
     sample_size = len(data)
     bins = np.linspace(data.min(), data.max(), int(np.sqrt(sample_size)))
-
     for ii in np.unique(cluster_id):
         subset = data[cluster_id == ii]
         counts, _ = np.histogram(subset, bins=bins)
@@ -104,6 +104,7 @@ def plot_hist_with_clustering(ax, data, n):
 
 
 def plot_subfigs(benchmark_array, name, u, subfig, label, clustering=False):
+    benchmark_array = np.sort(benchmark_array)
     q1 = np.quantile(benchmark_array, 0.25)
     q3 = np.quantile(benchmark_array, 0.75)
     q2 = np.quantile(benchmark_array, 0.5)
@@ -262,12 +263,13 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
     benchmarks_tests_results = defaultdict(Point)
 
     # 1. Iterator for all type
+    # sorry for the sorting, I know it defeats the purpose of the iterators. I use it to be sure output print can be checked :(
     if use_directory:
         # 1. Map the parser to the files
         # 2. Chain flattens the resulting iterators into one stream
-        it = sorted(chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt")))))
+        it = chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt"))))
     else:
-        it = sorted(parse_file_reframe(path))
+        it = parse_file_reframe(path)
 
     # 2. Collect data into list (Ugly)
     for k, (measurement, hostname) in it:
@@ -383,11 +385,11 @@ if __name__ == "__main__":
         d = remove_outlier(d)
     print("# Plots and Statistics")
 
-    if not args.no_post_process and args.output_file_with_outliers_removed:
+    if args.output_file_with_outliers_removed:
         with open(f'{path.parent}/{path.stem}.processed.log', 'w') as file:
             for (key,value) in d.items():
                 point = value
-                for flop, hostname in zip(point.flops, point.hostnames):
+                for flop, hostname in sorted(zip(point.flops, point.hostnames)):
                     file.write(f'{key[0]},{flop},{key[1]},{key[0].split("_")[0]+"0"},{hostname}\n')
     
     plot(output_name, d, not args.no_post_process)

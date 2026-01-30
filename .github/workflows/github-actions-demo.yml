@@ -36,12 +36,14 @@ jobs:
          diff aurora_2026/01/run2/new_format.processed.ref.log aurora_2026/01/run2/new_format.processed.log
 
     - name: Run on aurora_2026/01/run2/ without post-process and save output
-      run: uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.txt --no-post-process --output-file-with-outliers-removed > output
+      run: |
+         uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.txt --no-post-process --output-file-with-outliers-removed > output
+	 uv run python mine_paper.py -f  aurora_2026/01/run2/new_format.processed.log --no-post-process --output-file-with-outliers-removed
 
     - name: Check if aurora_2026/01/run2/ without post-process output matches
       run: |
          diff output aurora_2026/01/run2/output_no_post_process
-         diff aurora_2026/01/run2/new_format.txt aurora_2026/01/run2/new_format.processed.log
+         diff aurora_2026/01/run2/new_format.processed.processed.log aurora_2026/01/run2/new_format.processed.log
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log with post-process
       run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log > output

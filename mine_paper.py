@@ -281,6 +281,8 @@ def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
         v.flops = np.array(v.flops, dtype=float)
         v.hostnames = np.array(v.hostnames, dtype=object)
 
+    benchmarks_tests_results = dict(sorted(benchmarks_tests_results.items()))
+        
     return benchmarks_tests_results
 
 
@@ -381,10 +383,10 @@ if __name__ == "__main__":
     print(f"Graph will be saved in `{output_name}`")
 
     d = parse(path, use_directory)
+
     if not args.no_post_process:
         d = remove_outlier(d)
     print("# Plots and Statistics")
-
     if args.output_file_with_outliers_removed:
         with open(f'{path.parent}/{path.stem}.processed.log', 'w') as file:
             for (key,value) in d.items():

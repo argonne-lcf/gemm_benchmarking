@@ -46,24 +46,37 @@ jobs:
          diff aurora_2026/01/run2/new_format.processed.processed.log aurora_2026/01/run2/new_format.processed.log
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log with post-process
-      run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log > output
+      run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log --output-file-with-outliers-removed > output
 
     - name: Check if aurora_2025/reframe_single_node_normalized/normal.smaller.log with post-process output matches
-      run: diff aurora_2025/reframe_single_node_normalized/output_post_process output
+      run: |
+         diff aurora_2025/reframe_single_node_normalized/output_post_process output
+         diff aurora_2025/reframe_single_node_normalized/normal.smaller.processed.ref.log aurora_2025/reframe_single_node_normalized/normal.smaller.processed.log
 
     - name: Run on aurora_2025/reframe_single_node_normalized/normal.smaller.log without post-process and save output
-      run: uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log --no-post-process > output
+      run: |
+         uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.log --no-post-process --output-file-with-outliers-removed > output
+         uv run python mine_paper.py -f aurora_2025/reframe_single_node_normalized/normal.smaller.processed.log --no-post-process --output-file-with-outliers-removed
+
     - name: Check if aurora_2025/reframe_single_node_normalized/normal.smaller.log without post-process output matches
-      run: diff aurora_2025/reframe_single_node_normalized/output_no_post_process output
+      run: |
+         diff aurora_2025/reframe_single_node_normalized/output_no_post_process output
+         diff aurora_2025/reframe_single_node_normalized/normal.smaller.processed.processed.log aurora_2025/reframe_single_node_normalized/normal.smaller.processed.log
 
     - name: Run on polaris_2026/01/data_400_nodes with post-process and save output
-      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes > output
+      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --output-file-with-outliers-removed  > output
 
     - name: Check if polaris_2026/01/data_400_nodes with post-process output matches
-      run: diff output polaris_2026/01/output_post_process
-
+      run: |
+         diff output polaris_2026/01/output_post_process
+         diff polaris_2026/01/polaris_2026/01/data_400_nodes.processed.ref.log polaris_2026/01/polaris_2026/01/data_400_nodes.processed.log
+	 
     - name: Run on polaris_2026/01/data_400_nodes without post-process and save output
-      run: uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process > output
+      run: |
+         uv run python mine_paper.py -d polaris_2026/01/data_400_nodes --no-post-process > output
+         uv run python mine_paper.py -d polaris_2026/01/data_400_nodes.processed.log --no-post-process
 
     - name: Check if polaris_2026/01/data_400_nodes without post-process output matches
-      run: diff output polaris_2026/01/output_no_post_process
+      run: |
+         diff output polaris_2026/01/output_no_post_process
+         diff polaris_2026/01/data_400_nodes.processed.log polaris_2026/01/data_400_nodes.processed.processed.log

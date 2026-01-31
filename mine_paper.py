@@ -169,27 +169,6 @@ def plot_subfigs(benchmark_array, name, u, subfig, label, clustering=False):
     add_box_letter(axs[1], f"{label}-b)")
 
 
-def parse_file_our_format(file_path) -> Iterable:
-    gemm_type = file_path.stem.split(".")[0]
-    with file_path.open() as f:
-        for line in f:
-            # 19787.7,GFlop/s,gpu0,x4102c5s5b0n0
-            measurement, unit, device_id, hostname = line.strip().split(",")
-
-            measurement = float(measurement)
-            if unit == "GFlop/s" and device_id.startswith("gpu"):
-                unit = "TFLOP/s"
-                measurement /= 1e3
-
-            if device_id.startswith("gpu"):
-                gemm_type_ = f"gpu_{gemm_type}"
-            elif device_id.startswith("cpu"):
-                gemm_type_ = f"cpu_{gemm_type}"
-            else:
-                raise (f"Fail to parse #{line}")
-            yield ((gemm_type_, unit), (float(measurement), hostname))
-
-
 def parse_file_reframe(file_path):
     # check first line to determine where we are
     with file_path.open() as f:
@@ -259,16 +238,11 @@ class Point:
     hostnames: List = field(default_factory=list)
 
 
-def parse(path, use_directory):  # -> Return Dict [ name_test, unit ] = Point
+def parse(path):  # -> Return Dict [ name_test, unit ] = Point
     benchmarks_tests_results = defaultdict(Point)
 
     # 1. Iterator for all type
-    if use_directory:
-        # 1. Map the parser to the files
-        # 2. Chain flattens the resulting iterators into one stream
-        it = chain.from_iterable(map(parse_file_our_format, sorted(path.glob("*.txt"))))
-    else:
-        it = parse_file_reframe(path)
+    it = parse_file_reframe(path)
 
     # 2. Collect data into list (Ugly)
     for k, (measurement, hostname) in it:
@@ -352,11 +326,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GEMM Miner")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-f", "--file", type=Path, help="Path to the input file")
-    group.add_argument(
-        "-d", "--directory", type=Path, help="Path to the directory with input files"
-    )
+    parser.add_argument("-f", "--file", type=Path, help="Path to the input file")
     parser.add_argument("-o", "--output", type=Path, help="Path to the output file")
 
     parser.add_argument(
@@ -373,15 +343,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    path = args.directory if args.directory else args.file
-    use_directory = True if args.directory else False
-
-# TODO: error out or handle if args.output_file_with_outliers_removed and args.no_post_process are both true
+    path = args.file
     
     output_name = args.output if args.output else path.stem + ".png"
     print(f"Graph will be saved in `{output_name}`")
 
-    d = parse(path, use_directory)
+    d = parse(path)
 
     if not args.no_post_process:
         d = remove_outlier(d)

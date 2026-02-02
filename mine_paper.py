@@ -352,12 +352,14 @@ if __name__ == "__main__":
 
     if not args.no_post_process:
         d = remove_outlier(d)
-    print("# Plots and Statistics")
+
+# Print the processed data to a file if an input flag is set
     if args.output_file_with_outliers_removed:
         with open(f'{path.parent}/{path.stem}.processed.log', 'w') as file:
             for (key,value) in d.items():
                 point = value
                 for flop, hostname in sorted(zip(point.flops, point.hostnames)):
                     file.write(f'{key[0]},{flop},{key[1]},{key[0].split("_")[0]+"0"},{hostname}\n')
-    
+
+    print("# Plots and Statistics")
     plot(output_name, d, not args.no_post_process)

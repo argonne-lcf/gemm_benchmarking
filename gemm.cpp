@@ -312,12 +312,21 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
 #endif
       std::sort(flops.begin(), flops.end());
     }
+
+    // convert to Tflop if max is > 1000
+    string units = " GFlop/s";
+    double convert = 1.0;
+    if( flops.back() > 1000) {
+      convert = 1000.0;
+      units = " TFlop/s"
+    }
+
     std::cout << "Result For " << name << " (sample size: " << gather_size << ")" << std::endl;
-    std::cout << "-Min " << flops.front() << " GFlop/s" << std::endl;
-    std::cout << "-Q1 " << quant(flops, 0.25) << " GFlop/s" << std::endl;
-    std::cout << "-Q2(median) " << quant(flops, 0.50) << " GFlop/s" << std::endl;
-    std::cout << "-Q3 " << quant(flops, 0.75) << " GFlop/s" << std::endl;
-    std::cout << "-Max " << flops.back() << " GFlop/s" << std::endl;
+    std::cout << "-Min " << flops.front() / convert << units << std::endl;
+    std::cout << "-Q1 " << quant(flops, 0.25) / convert << units << std::endl;
+    std::cout << "-Q2(median) " << quant(flops, 0.50) / convert << units << std::endl;
+    std::cout << "-Q3 " << quant(flops, 0.75) / convert << units << std::endl;
+    std::cout << "-Max " << flops.back() / convert << units << std::endl;
     std::cout << "-Memory usage " << (m*n*sizeof(fp_c)+k*n*sizeof(fp_ab)+m*k*sizeof(fp_ab)) / 1e9 << " GB" << std::endl;
 
   } else if (MPI_SUB_COMM_GATHER != MPI_COMM_NULL) {

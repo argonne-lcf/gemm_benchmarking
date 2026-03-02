@@ -314,11 +314,15 @@ int run(sycl::queue Q, int m, int n, int k, std::string name, std::string bench_
     }
 
     // convert to Tflop if max is > 1000
-    string units = " GFlop/s";
+    std::string units = " GFlop/s";
     double convert = 1.0;
-    if( flops.back() > 1000) {
+    if( flops.back() > 1000000) {
+      convert = 1000000.0;
+      units = " PFlop/s";
+    }
+    else if( flops.back() > 1000) {
       convert = 1000.0;
-      units = " TFlop/s"
+      units = " TFlop/s";
     }
 
     std::cout << "Result For " << name << " (sample size: " << gather_size << ")" << std::endl;

@@ -1,0 +1,50 @@
+Graph will be saved in `data.png`
+# Plots and Statistics
+## gpu_DGEMM (TFLOP/s)
+   -Min 25.2
+   -Q1 28.6
+   -Median 28.8
+   -Q3 29.1
+   -Max 30.5
+   -Sample Size 49152
+   -(Q3-Q1)/median 1.83%
+## gpu_HGEMM-BF16 (TFLOP/s)
+   -Min 327.0
+   -Q1 404.7
+   -Median 410.5
+   -Q3 416.0
+   -Max 445.7
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.74%
+## gpu_HGEMM-FP16 (TFLOP/s)
+   -Min 343.8
+   -Q1 416.1
+   -Median 419.7
+   -Q3 426.4
+   -Max 493.6
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.46%
+## gpu_IGEMM (TFLOP/s)
+   -Min 603.5
+   -Q1 830.0
+   -Median 842.6
+   -Q3 853.5
+   -Max 906.4
+   -Sample Size 49152
+   -(Q3-Q1)/median 2.79%
+## gpu_SGEMM-FP32 (TFLOP/s)
+   -Min 42.7
+   -Q1 42.8
+   -Median 42.8
+   -Q3 42.9
+   -Max 45.7
+   -Sample Size 49152
+   -(Q3-Q1)/median 0.02%
+## gpu_SGEMM-TF32 (TFLOP/s)
+   -Min 168.3
+   -Q1 204.2
+   -Median 207.5
+   -Q3 210.7
+   -Max 226.0
+   -Sample Size 49152
+   -(Q3-Q1)/median 3.11%

@@ -45,11 +45,13 @@ template <typename fp_ab, typename fp_c, typename fp_scalar>
 void mkl_gemm(int m, int n, int k, fp_scalar alpha, fp_ab *A, int ldA, fp_ab *B, int ldB,
               fp_scalar beta, fp_c *C_cpu, int ldC);
 
+#if INTEL_MKL_VERSION < 20260000
 template <> struct std::numeric_limits<oneapi::mkl::bfloat16> {
   static oneapi::mkl::bfloat16 max() { return BFLOAT16_MAX; }
   static oneapi::mkl::bfloat16 min() { return BFLOAT16_MIN; }
   static oneapi::mkl::bfloat16 epsilon() { return BFLOAT16_EPSILON; }
 };
+#endif
 
 template <>
 void mkl_gemm<MKL_F16, MKL_F16, MKL_F16>(int m, int n, int k, MKL_F16 alpha, MKL_F16 *A, int ldA,

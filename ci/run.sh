@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-cd "${PBS_O_WORKDIR:-$PWD}"
-
 NNODES=$(wc -l < "$PBS_NODEFILE")
 RANKS_PER_NODE=12
 

@@ -12,7 +12,6 @@ spec:
 ---
 
 stages:
-  - build
   - test
   - publish
 
@@ -27,25 +26,11 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "web"'
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
 
-build:
-  extends: .aurora-shell-runner
-  stage: build
-  timeout: 1h
-  interruptible: true
-  script:
-    - ./ci/build.sh
-  artifacts:
-    expire_in: 1 week
-    paths:
-      - gemm
-
 run-gemm:
   extends: .aurora-batch-runner
   stage: test
   timeout: 1 week
   interruptible: false
-  needs:
-    - build
   variables:
     ANL_AURORA_SCHEDULER_PARAMETERS: >-
       -A $[[ inputs.allocation ]]

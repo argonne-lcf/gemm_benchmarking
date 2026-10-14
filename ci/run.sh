@@ -10,6 +10,8 @@ echo "Jobid: $PBS_JOBID"
 echo "NUM_OF_NODES=${NNODES}  RANKS_PER_NODE=${RANKS_PER_NODE}"
 module list
 
+mpicxx -o gemm gemm.cpp -fsycl -DMKL_ILP64 -fiopenmp -qmkl=parallel -DSAVE
+
 RESULTS=results
 rm -rf "$RESULTS"
 mkdir -p "$RESULTS"

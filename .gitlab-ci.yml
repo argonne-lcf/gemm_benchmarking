@@ -1,0 +1,70 @@
+spec:
+  inputs:
+    allocation:
+      default: Performance
+      description: ALCF allocation to charge the batch job to (-A).
+    nodes:
+      default: "8192"
+      description: Number of Aurora nodes to request (-l select=).
+    queue:
+      default: prod
+      description: PBS queue to submit to (-q).
+---
+
+stages:
+  - build
+  - test
+  - publish
+
+include:
+  - project: 'anl/ci-resources/defaults'
+    ref: main
+    file:
+      - '/runners.yml'
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+build:
+  extends: .aurora-shell-runner
+  stage: build
+  timeout: 1h
+  interruptible: true
+  script:
+    - ./ci/build.sh
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - gemm
+
+run-gemm:
+  extends: .aurora-batch-runner
+  stage: test
+  timeout: 1 week
+  interruptible: false
+  needs:
+    - build
+  variables:
+    ANL_AURORA_SCHEDULER_PARAMETERS: >-
+      -A $[[ inputs.allocation ]]
+      -l select=$[[ inputs.nodes ]],walltime=1:00:00,filesystems=home:flare
+      -q $[[ inputs.queue ]]
+  script:
+    - ./ci/run.sh
+  artifacts:
+    when: always
+    expire_in: 1 month
+    paths:
+      - results/
+
+publish:
+  extends: .aurora-shell-runner
+  stage: publish
+  timeout: 30m
+  interruptible: false
+  needs:
+    - run-gemm
+  script:
+    - ./ci/publish.sh results

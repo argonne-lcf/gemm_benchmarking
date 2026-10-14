@@ -1,0 +1,29 @@
+name: Open PR for CI results
+
+on:
+  push:
+    branches:
+      - 'results/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open a pull request for the pushed results branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if gh pr view "$BRANCH" --repo "$REPO" >/dev/null 2>&1; then
+            echo "PR already open for $BRANCH"
+            exit 0
+          fi
+          gh pr create --repo "$REPO" \
+            --base main --head "$BRANCH" \
+            --title "GEMM benchmark results: ${BRANCH#results/}" \
+            --body "Automated 8192-node Aurora GEMM run from ALCF GitLab CI."

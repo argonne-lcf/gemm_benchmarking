@@ -32,7 +32,9 @@ mv data.txt data_cpu.txt
 cat data_gpu.txt data_cpu.txt > data.txt
 
 export OMP_NUM_THREADS=1
+set +u
 module load frameworks
+set -u
 python ../mine_paper.py -f data.txt --no-post-process > output_no_post_process
 mv data.png output_no_post_process.png
 python ../mine_paper.py -f data.txt > output_post_process
